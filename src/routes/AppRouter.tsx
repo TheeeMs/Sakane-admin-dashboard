@@ -9,6 +9,7 @@ const AppRouter = () => {
       <Route element={<Layout />}>
         <Route path="/" element={<Home />} />
         <Route path="/residents" element={<ResidentsPage />} />
+        {/* Add more routes here as needed */}
       </Route>
     </Routes>
   );
