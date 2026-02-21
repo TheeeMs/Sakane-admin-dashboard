@@ -11,6 +11,8 @@ import {
   MessageSquare,
   LayoutGrid,
   ChevronRight,
+  Briefcase,
+  Settings,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -39,6 +41,14 @@ const navSections = [
       { icon: Search, label: "Missing & Found", path: "/missing-found" },
       { icon: MessageSquare, label: "Feedback", path: "/feedback" },
     ],
+  },
+  {
+    label: "STAFF",
+    items: [{ icon: Briefcase, label: "Employees", path: "/employees" }],
+  },
+  {
+    label: "SYSTEM",
+    items: [{ icon: Settings, label: "Settings", path: "/settings" }],
   },
 ];
 
