@@ -1,12 +1,17 @@
 import { useState } from "react";
 import { MessageSquare, Clock, ThumbsUp, TrendingUp, Plus } from "lucide-react";
 import { PrimaryButton, StatCard } from "@/components/shared";
-import { FeedbackList } from "./components";
+import {
+  FeedbackList,
+  CreateFeedbackModal,
+  type FeedbackFormData,
+} from "./components";
 import { feedbackData, calculateFeedbackStatistics } from "./data/feedbackData";
 import type { Feedback } from "./types";
 
 export function FeedbackPage() {
   const [feedbackList] = useState(feedbackData);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
   // Calculate statistics
   const statistics = calculateFeedbackStatistics(feedbackList);
@@ -28,8 +33,13 @@ export function FeedbackPage() {
   };
 
   const handleCreateFeedback = () => {
-    console.log("Create new feedback");
-    // TODO: Open create feedback modal
+    setIsCreateModalOpen(true);
+  };
+
+  const handleSubmitFeedback = (data: FeedbackFormData) => {
+    console.log("New feedback submitted:", data);
+    // TODO: Add feedback to the list
+    // TODO: Call API to save feedback
   };
 
   return (
@@ -95,6 +105,13 @@ export function FeedbackPage() {
         onViewDetails={handleViewDetails}
         onRespond={handleRespond}
         onDelete={handleDelete}
+      />
+
+      {/* Create Feedback Modal */}
+      <CreateFeedbackModal
+        isOpen={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
+        onSubmit={handleSubmitFeedback}
       />
     </div>
   );
