@@ -1,4 +1,3 @@
-export * from "./EventStatCard";
 export * from "./PendingBanner";
 export * from "./EventCard";
 export * from "./EventsGrid";
