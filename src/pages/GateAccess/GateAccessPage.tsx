@@ -1,9 +1,16 @@
+import { useState } from "react";
 import { Users, Package, QrCode } from "lucide-react";
 import { StatCard } from "./components/StatCard";
 import { QRTable } from "./components/QRTable";
-import { qrAccessData } from "./data/gateData";
+import { QRDetailsDrawer } from "./components/QRDetailsDrawer";
+import { qrAccessData, getResidentInfo } from "./data/gateData";
+import type { QRAccessCode, ResidentInfo } from "./types";
 
 const GateAccessPage = () => {
+  const [selectedResident, setSelectedResident] =
+    useState<ResidentInfo | null>(null);
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+
   // Calculate statistics from data
   const totalGuests = qrAccessData.filter(
     (item) => item.visitorType === "Guest" || item.visitorType === "Family",
@@ -16,6 +23,22 @@ const GateAccessPage = () => {
   const activeQRCodes = qrAccessData.filter(
     (item) => item.status === "Active",
   ).length;
+
+  const handleRowClick = (code: QRAccessCode) => {
+    if (code.hostResidentId) {
+      const resident = getResidentInfo(code.hostResidentId);
+      if (resident) {
+        setSelectedResident(resident);
+        setIsDrawerOpen(true);
+      }
+    }
+  };
+
+  const handleCloseDrawer = () => {
+    setIsDrawerOpen(false);
+    // Delay clearing selected resident until animation finishes
+    setTimeout(() => setSelectedResident(null), 300);
+  };
 
   return (
     <div className="space-y-6">
@@ -54,7 +77,14 @@ const GateAccessPage = () => {
       </div>
 
       {/* QR Access Codes Table */}
-      <QRTable data={qrAccessData} />
+      <QRTable data={qrAccessData} onRowClick={handleRowClick} />
+
+      {/* QR Details Drawer */}
+      <QRDetailsDrawer
+        isOpen={isDrawerOpen}
+        onClose={handleCloseDrawer}
+        resident={selectedResident}
+      />
     </div>
   );
 };

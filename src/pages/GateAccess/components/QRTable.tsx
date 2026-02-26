@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils";
 
 interface QRTableProps {
   data: QRAccessCode[];
+  onRowClick?: (code: QRAccessCode) => void;
 }
 
 const FILTER_TABS: Array<"All" | VisitorType> = [
@@ -48,7 +49,7 @@ const StatusBadge = ({ status }: { status: QRStatus }) => {
   );
 };
 
-export const QRTable = ({ data }: QRTableProps) => {
+export const QRTable = ({ data, onRowClick }: QRTableProps) => {
   const [activeTab, setActiveTab] = useState<"All" | VisitorType>("All");
   const [search, setSearch] = useState("");
 
@@ -169,7 +170,8 @@ export const QRTable = ({ data }: QRTableProps) => {
               filtered.map((item) => (
                 <tr
                   key={item.id}
-                  className="hover:bg-gray-50/60 transition-colors"
+                  onClick={() => onRowClick?.(item)}
+                  className="hover:bg-teal-50/40 transition-colors cursor-pointer"
                 >
                   {/* QR Code */}
                   <td className="px-6 py-4">

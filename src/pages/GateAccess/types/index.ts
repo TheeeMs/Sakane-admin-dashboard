@@ -9,10 +9,22 @@ export interface QRAccessCode {
   visitorIcon: string;
   visitorIconBg: string;
   hostResident: string;
+  hostResidentId?: string;
   unit: string;
+  building?: string;
   created: string;
   validUntil: string;
   status: QRStatus;
+}
+
+export interface ResidentInfo {
+  id: string;
+  name: string;
+  initials: string;
+  unit: string;
+  building: string;
+  phone: string;
+  qrCodes: QRAccessCode[];
 }
 
 export interface GateStatistics {
