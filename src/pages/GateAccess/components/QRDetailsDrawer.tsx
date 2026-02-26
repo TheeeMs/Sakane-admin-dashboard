@@ -1,4 +1,3 @@
-
 import { X, ChevronDown } from "lucide-react";
 import { useEffect, useRef } from "react";
 import type { ResidentInfo, QRStatus } from "../types";

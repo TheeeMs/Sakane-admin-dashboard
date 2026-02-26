@@ -7,8 +7,9 @@ import { qrAccessData, getResidentInfo } from "./data/gateData";
 import type { QRAccessCode, ResidentInfo } from "./types";
 
 const GateAccessPage = () => {
-  const [selectedResident, setSelectedResident] =
-    useState<ResidentInfo | null>(null);
+  const [selectedResident, setSelectedResident] = useState<ResidentInfo | null>(
+    null,
+  );
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
 
   // Calculate statistics from data
