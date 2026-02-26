@@ -1,14 +1,12 @@
 interface TagsListProps {
   tags: string[];
   title?: string;
-  variant?: "default" | "colored";
   maxDisplay?: number;
 }
 
 export function TagsList({
   tags,
   title,
-  variant = "default",
   maxDisplay,
 }: TagsListProps) {
   if (!tags || tags.length === 0) return null;
