@@ -4,11 +4,7 @@ interface TagsListProps {
   maxDisplay?: number;
 }
 
-export function TagsList({
-  tags,
-  title,
-  maxDisplay,
-}: TagsListProps) {
+export function TagsList({ tags, title, maxDisplay }: TagsListProps) {
   if (!tags || tags.length === 0) return null;
 
   const displayTags = maxDisplay ? tags.slice(0, maxDisplay) : tags;
