@@ -2,7 +2,7 @@ import { ChevronDown } from "lucide-react";
 import type { SelectHTMLAttributes } from "react";
 
 interface SelectProps extends SelectHTMLAttributes<HTMLSelectElement> {
-  label: string;
+  label?: string;
   error?: string;
   required?: boolean;
   options: { value: string; label: string }[];
@@ -19,9 +19,11 @@ export function Select({
 }: SelectProps) {
   return (
     <div className="space-y-2">
-      <label className="block text-sm font-medium text-gray-900">
-        {label} {required && <span className="text-red-500">*</span>}
-      </label>
+      {label && (
+        <label className="block text-sm font-medium text-gray-900">
+          {label} {required && <span className="text-red-500">*</span>}
+        </label>
+      )}
       <div className="relative">
         <select
           {...props}
