@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Crown, Shield, Users, Wrench, UserCheck, Plus } from "lucide-react";
 import { PrimaryButton, StatCard } from "@/components/shared";
-import { EmployeeTable } from "./components";
+import { EmployeeTable, EmployeeDetailsModal } from "./components";
 import {
   employeesData,
   calculateEmployeeStatistics,
@@ -10,6 +10,10 @@ import type { Employee } from "./types";
 
 export function EmployeesPage() {
   const [employees] = useState<Employee[]>(employeesData);
+  const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(
+    null,
+  );
+  const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
 
   // Calculate statistics
   const statistics = calculateEmployeeStatistics(employees);
@@ -20,7 +24,13 @@ export function EmployeesPage() {
     // TODO: Open add employee modal
   };
 
+  const handleEmployeeClick = (employee: Employee) => {
+    setSelectedEmployee(employee);
+    setIsDetailsModalOpen(true);
+  };
+
   const handleEditEmployee = (employee: Employee) => {
+    setIsDetailsModalOpen(false);
     console.log("Edit employee:", employee);
     // TODO: Open edit employee modal
   };
@@ -28,6 +38,16 @@ export function EmployeesPage() {
   const handleDeleteEmployee = (employee: Employee) => {
     console.log("Delete employee:", employee);
     // TODO: Show confirmation and delete
+  };
+
+  const handleManagePermissions = (employee: Employee) => {
+    console.log("Manage permissions for:", employee);
+    // TODO: Open permissions modal
+  };
+
+  const handleCloseDetailsModal = () => {
+    setIsDetailsModalOpen(false);
+    setSelectedEmployee(null);
   };
 
   return (
@@ -99,8 +119,18 @@ export function EmployeesPage() {
       {/* Employee Table */}
       <EmployeeTable
         employees={employees}
+        onEmployeeClick={handleEmployeeClick}
         onEdit={handleEditEmployee}
         onDelete={handleDeleteEmployee}
+      />
+
+      {/* Employee Details Modal */}
+      <EmployeeDetailsModal
+        employee={selectedEmployee}
+        isOpen={isDetailsModalOpen}
+        onClose={handleCloseDetailsModal}
+        onEdit={handleEditEmployee}
+        onManagePermissions={handleManagePermissions}
       />
     </div>
   );

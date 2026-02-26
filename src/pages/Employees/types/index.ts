@@ -10,6 +10,7 @@ export interface Employee {
   department: string;
   status: EmployeeStatus;
   lastActive: string;
+  hireDate?: string;
   avatar?: string;
   initials: string;
 }

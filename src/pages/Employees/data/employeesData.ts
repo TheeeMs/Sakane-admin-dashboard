@@ -10,6 +10,7 @@ export const employeesData: Employee[] = [
     department: "Management",
     status: "active",
     lastActive: "2026-02-26T15:30:00Z",
+    hireDate: "2024-01-15",
     initials: "AM",
   },
   {
@@ -21,6 +22,7 @@ export const employeesData: Employee[] = [
     department: "Management",
     status: "active",
     lastActive: "2026-02-26T14:20:00Z",
+    hireDate: "2024-03-20",
     initials: "SA",
   },
   {
@@ -32,6 +34,7 @@ export const employeesData: Employee[] = [
     department: "Maintenance",
     status: "active",
     lastActive: "2026-02-12T13:45:00Z",
+    hireDate: "2024-06-10",
     initials: "MH",
   },
   {
@@ -43,6 +46,7 @@ export const employeesData: Employee[] = [
     department: "Security",
     status: "active",
     lastActive: "2026-02-10T16:00:00Z",
+    hireDate: "2024-07-15",
     initials: "OK",
   },
   {
@@ -54,6 +58,7 @@ export const employeesData: Employee[] = [
     department: "Maintenance",
     status: "active",
     lastActive: "2026-02-10T07:30:00Z",
+    hireDate: "2024-08-22",
     initials: "LI",
   },
   {
@@ -65,6 +70,7 @@ export const employeesData: Employee[] = [
     department: "Security",
     status: "active",
     lastActive: "2026-02-12T12:15:00Z",
+    hireDate: "2024-09-05",
     initials: "YA",
   },
   {
@@ -76,6 +82,7 @@ export const employeesData: Employee[] = [
     department: "Operations",
     status: "inactive",
     lastActive: "2026-02-05T09:00:00Z",
+    hireDate: "2024-11-12",
     initials: "NM",
   },
   {
@@ -87,6 +94,7 @@ export const employeesData: Employee[] = [
     department: "Maintenance",
     status: "suspended",
     lastActive: "2026-02-01T15:30:00Z",
+    hireDate: "2025-01-18",
     initials: "HA",
   },
 ];

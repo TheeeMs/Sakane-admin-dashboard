@@ -8,12 +8,14 @@ import { StatusBadge } from "./shared/StatusBadge";
 
 interface EmployeeTableProps {
   employees: Employee[];
+  onEmployeeClick?: (employee: Employee) => void;
   onEdit: (employee: Employee) => void;
   onDelete: (employee: Employee) => void;
 }
 
 export function EmployeeTable({
   employees,
+  onEmployeeClick,
   onEdit,
   onDelete,
 }: EmployeeTableProps) {
@@ -154,7 +156,8 @@ export function EmployeeTable({
                 filteredEmployees.map((employee) => (
                   <tr
                     key={employee.id}
-                    className="hover:bg-gray-50 transition-colors"
+                    onClick={() => onEmployeeClick?.(employee)}
+                    className="hover:bg-gray-50 transition-colors cursor-pointer"
                   >
                     {/* Employee */}
                     <td className="px-6 py-4">
@@ -212,14 +215,20 @@ export function EmployeeTable({
                     <td className="px-6 py-4">
                       <div className="flex gap-2">
                         <button
-                          onClick={() => onEdit(employee)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onEdit(employee);
+                          }}
                           className="p-2 rounded-lg hover:bg-teal-50 text-teal-600 transition-colors"
                           title="Edit"
                         >
                           <Edit className="w-4 h-4" />
                         </button>
                         <button
-                          onClick={() => onDelete(employee)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onDelete(employee);
+                          }}
                           className="p-2 rounded-lg hover:bg-red-50 text-red-600 transition-colors"
                           title="Delete"
                         >
