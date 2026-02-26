@@ -1,26 +1,39 @@
-import { useState, useMemo } from 'react';
-import { Calendar, Clock, CheckCircle2, AlertCircle, Plus } from 'lucide-react';
-import type { Event } from './types';
-import { eventsData, calculateEventStatistics } from './data/eventsData';
-import { EventStatCard, PendingBanner, EventsGrid } from './components';
+import { useState, useMemo } from "react";
+import { Calendar, Clock, CheckCircle2, AlertCircle, Plus } from "lucide-react";
+import type { Event } from "./types";
+import { eventsData, calculateEventStatistics } from "./data/eventsData";
+import {
+  EventStatCard,
+  PendingBanner,
+  EventsGrid,
+  EventDetailsModal,
+} from "./components";
+import { PrimaryButton } from "@/components/shared/Buttons";
 
 export function EventsPage() {
   const [events] = useState<Event[]>(eventsData);
+  const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const statistics = useMemo(() => calculateEventStatistics(events), [events]);
 
   const handleEventClick = (event: Event) => {
-    console.log('Event clicked:', event);
-    // TODO: Open event details modal/drawer
+    setSelectedEvent(event);
+    setIsModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setSelectedEvent(null);
   };
 
   const handleReviewPending = () => {
-    console.log('Review pending events');
+    console.log("Review pending events");
     // TODO: Filter to pending events or open review modal
   };
 
   const handleCreateEvent = () => {
-    console.log('Create new event');
+    console.log("Create new event");
     // TODO: Open create event modal
   };
 
@@ -31,15 +44,13 @@ export function EventsPage() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold text-gray-900">Events Manager</h1>
-            <p className="text-gray-600 mt-1">Manage and organize community events</p>
+            <p className="text-gray-600 mt-1">
+              Manage and organize community events
+            </p>
           </div>
-          <button
-            onClick={handleCreateEvent}
-            className="flex items-center gap-2 px-6 py-3 bg-[#00A996] hover:bg-[#008c7a] text-white rounded-lg font-medium transition-colors duration-200 shadow-lg hover:shadow-xl"
-          >
-            <Plus className="w-5 h-5" />
+          <PrimaryButton onClick={handleCreateEvent} icon={Plus}>
             Create Event
-          </button>
+          </PrimaryButton>
         </div>
 
         {/* Statistics Cards */}
@@ -92,10 +103,20 @@ export function EventsPage() {
         </div>
 
         {/* Pending Approval Banner */}
-        <PendingBanner count={statistics.pending} onViewClick={handleReviewPending} />
+        <PendingBanner
+          count={statistics.pending}
+          onViewClick={handleReviewPending}
+        />
 
         {/* Events Grid */}
         <EventsGrid events={events} onEventClick={handleEventClick} />
+
+        {/* Event Details Modal */}
+        <EventDetailsModal
+          event={selectedEvent}
+          isOpen={isModalOpen}
+          onClose={handleCloseModal}
+        />
       </div>
     </div>
   );
