@@ -2,13 +2,8 @@ import { useState, useMemo } from "react";
 import { Calendar, Clock, CheckCircle2, AlertCircle, Plus } from "lucide-react";
 import type { Event } from "./types";
 import { eventsData, calculateEventStatistics } from "./data/eventsData";
-import {
-  EventStatCard,
-  PendingBanner,
-  EventsGrid,
-  EventDetailsModal,
-} from "./components";
-import { PrimaryButton } from "@/components/shared/Buttons";
+import { PendingBanner, EventsGrid, EventDetailsModal } from "./components";
+import { PrimaryButton, StatCard } from "@/components/shared";
 
 export function EventsPage() {
   const [events] = useState<Event[]>(eventsData);
@@ -55,7 +50,7 @@ export function EventsPage() {
 
         {/* Statistics Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-          <EventStatCard
+          <StatCard
             icon={Calendar}
             label="Total Events"
             value={statistics.total}
@@ -64,7 +59,7 @@ export function EventsPage() {
             gradient="bg-gradient-to-br from-teal-50 to-cyan-50"
             borderColor="border-teal-200"
           />
-          <EventStatCard
+          <StatCard
             icon={Clock}
             label="Pending"
             value={statistics.pending}
@@ -73,7 +68,7 @@ export function EventsPage() {
             gradient="bg-gradient-to-br from-yellow-50 to-amber-50"
             borderColor="border-yellow-200"
           />
-          <EventStatCard
+          <StatCard
             icon={CheckCircle2}
             label="Approved"
             value={statistics.approved}
@@ -82,7 +77,7 @@ export function EventsPage() {
             gradient="bg-gradient-to-br from-green-50 to-emerald-50"
             borderColor="border-green-200"
           />
-          <EventStatCard
+          <StatCard
             icon={AlertCircle}
             label="Ongoing"
             value={statistics.ongoing}
@@ -91,7 +86,7 @@ export function EventsPage() {
             gradient="bg-gradient-to-br from-blue-50 to-indigo-50"
             borderColor="border-blue-200"
           />
-          <EventStatCard
+          <StatCard
             icon={CheckCircle2}
             label="Completed"
             value={statistics.completed}
