@@ -1,13 +1,12 @@
 import { useState } from "react";
 import type { Report, ReportStatus, ReportType } from "./types";
-import StatCard from "./components/StatCard";
+import {StatCard} from "@/components/shared/StatCard";
 import ReportTable from "./components/ReportTable";
 import ReportModal from "./components/ReportModal";
-import {
-  AlertCircleIcon, PackageIcon, ClockIcon, CheckCircleIcon,
-} from "./components/icons";
+
 import CreateReportModal from "./components/CreateReportModel";
 import DeleteConfirmModal from "./components/DeleteConfirmModal";
+import { CircleAlert, CircleCheckBig, Clock4, Package } from "lucide-react";
 
 const INITIAL_REPORTS: Report[] = [
   { id: 1, type: "Missing", category: "Item",    title: "Car Keys with Blue Keychain",      shortDesc: "Lost my car",  location: "Near swimming pool area", reportedBy: "Ahmed Hassan",  unit: "A-101", status: "Open",     date: "Feb 11, 2026", contact: "+20 100 123 4567", fullDesc: "Lost my car keys near the swimming pool area. Blue keychain attached with a small tag.", photo: null },
@@ -86,12 +85,48 @@ export default function MissingFound() {
       </div>
 
       {/* ── Stat Cards ── */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 16, padding: "0 20px 20px" }}>
-        <StatCard icon={<AlertCircleIcon color="#ef4444" />} value={stats.missing}  label="Missing Items" bg="#fff5f5" border="#fecaca" valueColor="#ef4444" />
-        <StatCard icon={<PackageIcon     color="#10b981" />} value={stats.found}    label="Found Items"   bg="#f0fdf4" border="#bbf7d0" valueColor="#10b981" />
-        <StatCard icon={<ClockIcon       color="#3b82f6" />} value={stats.open}     label="Open Cases"    bg="#eff6ff" border="#bfdbfe" valueColor="#3b82f6" />
-        <StatCard icon={<CheckCircleIcon color="#8b5cf6" />} value={stats.resolved} label="Resolved"      bg="#f5f3ff" border="#ddd6fe" valueColor="#7c3aed" />
-      </div>
+      <div className="grid grid-cols-4 gap-4 p-5">
+  <StatCard
+    icon={CircleAlert}
+    value={stats.missing}
+    label="Missing Items"
+    iconBg="bg-red-100"
+    borderColor="border-red-200"
+    iconColor="text-red-500"
+    valueColor="text-red-500"
+    gradient="bg-gradient-to-br from-red-50 to-transparent"
+  />
+  <StatCard
+    icon={Package}
+    value={stats.found}
+    label="Found Items"
+    iconBg="bg-green-100"
+    borderColor="border-green-200"
+    iconColor="text-green-500"
+    valueColor="text-green-500"
+    gradient="bg-gradient-to-br from-green-50 to-transparent"
+  />
+  <StatCard
+    icon={Clock4}
+    value={stats.open}
+    label="Open Cases"
+    iconBg="bg-blue-100"
+    borderColor="border-blue-200"
+    iconColor="text-blue-500"
+    valueColor="text-blue-500"
+    gradient="bg-gradient-to-br from-blue-50 to-transparent"
+  />
+  <StatCard
+    icon={CircleCheckBig}
+    value={stats.resolved}
+    label="Resolved"
+    iconBg="bg-purple-100"
+    borderColor="border-purple-200"
+    iconColor="text-purple-500"
+    valueColor="text-purple-500"
+    gradient="bg-gradient-to-br from-purple-50 to-transparent"
+  />
+</div>
 
       {/* ── Table ── */}
       <div style={{ margin: "0 20px 20px" }}>

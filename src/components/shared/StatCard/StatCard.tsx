@@ -8,6 +8,7 @@ interface StatCardProps {
   iconColor: string;
   gradient: string;
   borderColor: string;
+  valueColor?: string;
 }
 
 export function StatCard({
@@ -18,6 +19,7 @@ export function StatCard({
   iconColor,
   gradient,
   borderColor,
+  valueColor 
 }: StatCardProps) {
   return (
     <div
@@ -30,7 +32,7 @@ export function StatCard({
           </div>
           <div>
             <p className="text-sm font-medium text-gray-600">{label}</p>
-            <p className="text-3xl font-bold text-gray-900 mt-1">{value}</p>
+            <p className={`text-lg font-bold ${valueColor || 'text-gray-900'}`}>{value}</p>
           </div>
         </div>
       </div>
