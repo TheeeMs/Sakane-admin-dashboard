@@ -125,13 +125,6 @@ const LoginPage = () => {
                 {isLoading ? "Signing in..." : "Enter dashboard"}
               </PrimaryButton>
             </div>
-
-            <div className="mt-8 rounded-2xl bg-slate-50 px-4 py-3 text-sm text-slate-600">
-              Seeded account:{" "}
-              <span className="font-semibold text-slate-900">
-                admin@sakany.app
-              </span>
-            </div>
           </form>
         </div>
       </div>
