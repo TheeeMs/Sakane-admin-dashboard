@@ -1,11 +1,18 @@
-import { AlertCircle } from 'lucide-react';
+import { AlertCircle, ChevronDown, ChevronUp } from "lucide-react";
 
 interface PendingBannerProps {
   count: number;
   onViewClick?: () => void;
+  onToggle?: () => void;
+  isOpen?: boolean;
 }
 
-export function PendingBanner({ count, onViewClick }: PendingBannerProps) {
+export function PendingBanner({
+  count,
+  onViewClick,
+  onToggle,
+  isOpen,
+}: PendingBannerProps) {
   if (count === 0) return null;
 
   return (
@@ -18,19 +25,36 @@ export function PendingBanner({ count, onViewClick }: PendingBannerProps) {
           <div>
             <h3 className="font-semibold text-gray-900">Pending Approval</h3>
             <p className="text-sm text-gray-600">
-              {count} event{count !== 1 ? 's' : ''} waiting for your review
+              {count} event{count !== 1 ? "s" : ""} waiting for your review
             </p>
           </div>
         </div>
-        
-        {onViewClick && (
-          <button
-            onClick={onViewClick}
-            className="px-4 py-2 bg-yellow-500 hover:bg-yellow-600 text-white rounded-lg font-medium transition-colors duration-200"
-          >
-            Review Now
-          </button>
-        )}
+
+        <div className="flex items-center gap-2">
+          {onViewClick && (
+            <button
+              onClick={onViewClick}
+              className="px-4 py-2 bg-yellow-500 hover:bg-yellow-600 text-white rounded-lg font-medium transition-colors duration-200"
+            >
+              Review Now
+            </button>
+          )}
+          {onToggle && (
+            <button
+              onClick={onToggle}
+              className="p-2 rounded-lg bg-yellow-100 text-yellow-700 hover:bg-yellow-200 transition-colors"
+              aria-label={
+                isOpen ? "Hide pending events" : "Show pending events"
+              }
+            >
+              {isOpen ? (
+                <ChevronUp className="w-5 h-5" />
+              ) : (
+                <ChevronDown className="w-5 h-5" />
+              )}
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );

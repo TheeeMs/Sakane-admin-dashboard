@@ -5,6 +5,9 @@ interface EventActionButtonsProps {
   onExport?: () => void;
   onEdit?: () => void;
   onDelete?: () => void;
+  onApprove?: () => void;
+  onReject?: () => void;
+  onComplete?: () => void;
 }
 
 export function EventActionButtons({
@@ -12,9 +15,40 @@ export function EventActionButtons({
   onExport,
   onEdit,
   onDelete,
+  onApprove,
+  onReject,
+  onComplete,
 }: EventActionButtonsProps) {
   return (
-    <div className="flex flex-wrap gap-3">
+    <div className="flex flex-wrap gap-3 items-center">
+      {/* Moderation actions: approve/reject/complete (conditionally shown by caller) */}
+      {onApprove && (
+        <button
+          onClick={onApprove}
+          className="px-3 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium"
+        >
+          Approve
+        </button>
+      )}
+
+      {onReject && (
+        <button
+          onClick={onReject}
+          className="px-3 py-2 bg-yellow-500 hover:bg-yellow-600 text-white rounded-lg font-medium"
+        >
+          Reject
+        </button>
+      )}
+
+      {onComplete && (
+        <button
+          onClick={onComplete}
+          className="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium"
+        >
+          Mark Complete
+        </button>
+      )}
+
       <button
         onClick={onNotify}
         className="flex items-center gap-2 px-4 py-2 bg-[#00A996] hover:bg-[#008c7a] text-white rounded-lg font-medium transition-colors"
