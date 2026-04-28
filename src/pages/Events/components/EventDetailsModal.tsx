@@ -13,12 +13,26 @@ interface EventDetailsModalProps {
   event: Event | null;
   isOpen: boolean;
   onClose: () => void;
+  onNotify?: (eventId: string) => void;
+  onExport?: (eventId: string) => void;
+  onEdit?: (eventId: string) => void;
+  onDelete?: (eventId: string) => void;
+  onApprove?: (eventId: string) => void;
+  onReject?: (eventId: string) => void;
+  onComplete?: (eventId: string) => void;
 }
 
 export function EventDetailsModal({
   event,
   isOpen,
   onClose,
+  onNotify,
+  onExport,
+  onEdit,
+  onDelete,
+  onApprove,
+  onReject,
+  onComplete,
 }: EventDetailsModalProps) {
   // Close on Escape key
   useEffect(() => {
@@ -63,7 +77,15 @@ export function EventDetailsModal({
         {/* Content Section */}
         <div className="p-6 space-y-6">
           {/* Action Buttons */}
-          <EventActionButtons />
+          <EventActionButtons
+            onNotify={() => event && onNotify?.(event.id)}
+            onExport={() => event && onExport?.(event.id)}
+            onEdit={() => event && onEdit?.(event.id)}
+            onDelete={() => event && onDelete?.(event.id)}
+            onApprove={() => event && onApprove?.(event.id)}
+            onReject={() => event && onReject?.(event.id)}
+            onComplete={() => event && onComplete?.(event.id)}
+          />
 
           {/* Event Details Grid */}
           <EventDetailsGrid
