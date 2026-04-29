@@ -12,28 +12,32 @@ export type MaintenanceStatus =
   | "CANCELLED";
 
 // ─── Response DTOs ────────────────────────────────────────────────────────────
-export interface MaintenanceRequestItemDto {
+export interface MaintenanceCommandCenterItem {
   id: string;
-  requestId: string;
-  title: string;
-  locationLabel: string;
+  displayId: string;
+  type: "PUBLIC" | "PRIVATE";
+  priority: string;   // "LOW" | "MEDIUM" | "HIGH" – already mapped by backend
+  issue: string;
   category: string;
-  priority: MaintenancePriority;
-  status: MaintenanceStatus;
-  isPublic: boolean;
-  createdAt: string;
-  residentName?: string;
-  residentUnit?: string;
+  location: string;
+  requestedAt: string;
+  status: string;     // "UNASSIGNED" | "ASSIGNED" | "COMPLETED" | "CLOSED"
+  workflowStatus: string;
+  technicianId: string | null;
 }
 
 export interface MaintenanceListResponseDto {
-  requests: MaintenanceRequestItemDto[];
+  items: MaintenanceCommandCenterItem[];
   page: number;
   size: number;
   totalElements: number;
   totalPages: number;
   hasNext: boolean;
   hasPrevious: boolean;
+  totalCount: number;
+  pendingCount: number;
+  inProgressCount: number;
+  completedCount: number;
 }
 
 export interface MaintenanceCardDto {

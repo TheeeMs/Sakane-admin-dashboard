@@ -5,10 +5,8 @@ import axios from "axios";
 import MaintenanceDetailPanel from "./MaintenanceDetailPanel";
 import {
   maintenanceApi,
-  type MaintenanceRequestItemDto,
+  type MaintenanceCommandCenterItem,
   type MaintenanceTab,
-  type MaintenancePriority,
-  type MaintenanceStatus,
 } from "./data/maintenanceApi";
 import type { MaintenanceRequest } from "./MaintenanceDetailPanel";
 import { useAuthStore } from "@/features/auth";
@@ -22,19 +20,18 @@ const getApiError = (err: unknown): string => {
   return err instanceof Error ? err.message : "Something went wrong";
 };
 
-// Map backend priority → display priority
-const mapPriority = (p: MaintenancePriority): "High" | "Medium" | "Low" => {
-  if (p === "URGENT" || p === "HIGH") return "High";
+// Map backend priority → display
+const mapPriority = (p: string): "High" | "Medium" | "Low" => {
+  if (p === "HIGH") return "High";
   if (p === "MEDIUM") return "Medium";
   return "Low";
 };
 
-// Map backend status → display status
-const mapStatus = (s: MaintenanceStatus): "Unassigned" | "Assigned" | "Completed" | "In Progress" => {
-  if (s === "SUBMITTED") return "Unassigned";
+// Map backend status badge → display
+const mapStatus = (s: string): "Unassigned" | "Assigned" | "Completed" | "In Progress" => {
+  if (s === "UNASSIGNED") return "Unassigned";
   if (s === "ASSIGNED") return "Assigned";
-  if (s === "IN_PROGRESS") return "In Progress";
-  if (s === "RESOLVED") return "Completed";
+  if (s === "COMPLETED") return "Completed";
   return "Unassigned";
 };
 
@@ -46,19 +43,19 @@ const TAB_MAP: Record<string, MaintenanceTab> = {
   Completed: "COMPLETED",
 };
 
-const toDisplayRequest = (dto: MaintenanceRequestItemDto): MaintenanceRequest => ({
-  id: dto.id,
-  type: dto.isPublic ? "Public" : "Private",
-  requestId: dto.requestId,
+const toDisplayRequest = (dto: MaintenanceCommandCenterItem): MaintenanceRequest => ({
+  id: String(dto.id),
+  type: dto.type === "PUBLIC" ? "Public" : "Private",
+  requestId: dto.displayId,
   priority: mapPriority(dto.priority),
-  issue: dto.title,
-  location: dto.locationLabel,
-  dateTime: new Date(dto.createdAt).toLocaleString("en-US", {
-    month: "short", day: "numeric", hour: "numeric", minute: "2-digit",
-  }),
+  issue: dto.issue,
+  location: dto.location,
+  dateTime: dto.requestedAt
+    ? new Date(dto.requestedAt).toLocaleString("en-US", {
+        month: "short", day: "numeric", hour: "numeric", minute: "2-digit",
+      })
+    : "—",
   status: mapStatus(dto.status),
-  residentName: dto.residentName,
-  residentUnit: dto.residentUnit,
 });
 
 // ─── Badge configs ────────────────────────────────────────────────────────────
@@ -162,7 +159,7 @@ const MaintenancePage = () => {
         size: 20,
       });
       const data = res.data;
-      const list = Array.isArray(data?.requests) ? data.requests : [];
+      const list = Array.isArray(data?.items) ? data.items : [];
       setRequests(list.map(toDisplayRequest));
       setTotalPages(data?.totalPages ?? 1);
       setTotalElements(data?.totalElements ?? list.length);
