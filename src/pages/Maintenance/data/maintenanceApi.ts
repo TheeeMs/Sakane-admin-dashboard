@@ -41,39 +41,54 @@ export interface MaintenanceListResponseDto {
 }
 
 export interface MaintenanceCardDto {
-  id: string;
   requestId: string;
-  title: string;
+  issueTitle: string;
+  requestType: string;
+  priority: string;
+  status: string;
+  workflowStatus: string;
   description: string;
-  locationLabel: string;
-  category: string;
-  priority: MaintenancePriority;
-  status: MaintenanceStatus;
-  isPublic: boolean;
-  createdAt: string;
-  photoUrls: string[];
-  resident: {
+  location: string;
+  photos: string[];
+  requester: {
     residentId: string;
     fullName: string;
-    unitLabel: string;
-    phoneNumber: string;
+    initials: string;
+    phone: string;
     email: string;
+    unitNumber: string | null;
+    buildingName: string | null;
   };
-  assignedTechnician?: {
-    technicianId: string;
-    fullName: string;
+  assignment: {
+    technicianId: string | null;
+    technicianName: string | null;
+    technicianPhone: string | null;
+  };
+  completion: {
+    completed: boolean;
+    completedAt: string | null;
+    resolution: string | null;
+    totalCost: number | null;
+    completedByName: string | null;
+    receiptDownloadUrl: string;
   };
   timeline: {
-    label: string;
-    time: string;
+    eventType: string;
+    title: string;
+    details: string | null;
+    occurredAt: string;
   }[];
+  submittedAt: string;
+  resolvedAt: string | null;
 }
 
 export interface TechnicianOptionDto {
   technicianId: string;
   fullName: string;
-  available: boolean;
+  phone: string;
+  isAvailable: boolean;
   specializations: string[];
+  rating: number | null;
 }
 
 // ─── API ──────────────────────────────────────────────────────────────────────

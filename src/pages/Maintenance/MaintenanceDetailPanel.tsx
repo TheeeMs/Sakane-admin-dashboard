@@ -6,10 +6,9 @@ import {
   maintenanceApi,
   type MaintenanceCardDto,
   type TechnicianOptionDto,
-  type MaintenancePriority,
 } from "./data/maintenanceApi";
 
-// ─── Shared type used by MaintenancePage too ──────────────────────────────────
+// ─── Shared type used by MaintenancePage ──────────────────────────────────────
 export interface MaintenanceRequest {
   id: string;
   type: "Private" | "Public";
@@ -21,12 +20,6 @@ export interface MaintenanceRequest {
   status: "Unassigned" | "Assigned" | "Completed" | "In Progress";
   residentName?: string;
   residentUnit?: string;
-  residentInitials?: string;
-  residentPhone?: string;
-  residentEmail?: string;
-  description?: string;
-  photos?: number;
-  timeline?: { label: string; time: string }[];
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -38,11 +31,8 @@ const getApiError = (err: unknown): string => {
   return err instanceof Error ? err.message : "Something went wrong";
 };
 
-const toBackendPriority = (p: "High" | "Medium" | "Low"): MaintenancePriority =>
+const toBackendPriority = (p: "High" | "Medium" | "Low") =>
   p === "High" ? "HIGH" : p === "Medium" ? "MEDIUM" : "LOW";
-
-const getInitials = (name: string) =>
-  name.split(" ").filter(Boolean).slice(0, 2).map((w) => w[0]).join("").toUpperCase();
 
 // ─── Priority button config ───────────────────────────────────────────────────
 const PRIORITY_BTN = {
@@ -60,23 +50,19 @@ interface Props {
 }
 
 const MaintenanceDetailPanel = ({ request, actorId, onClose, onUpdated }: Props) => {
-  // Card data from API
   const [card, setCard] = useState<MaintenanceCardDto | null>(null);
   const [cardLoading, setCardLoading] = useState(true);
   const [cardError, setCardError] = useState<string | null>(null);
 
-  // Technicians
   const [technicians, setTechnicians] = useState<TechnicianOptionDto[]>([]);
-  const [techLoading, setTechLoading] = useState(true);
 
-  // Panel state
   const [priority, setPriority] = useState<"High" | "Medium" | "Low">(request.priority);
   const [selectedTech, setSelectedTech] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [saveSuccess, setSaveSuccess] = useState<string | null>(null);
 
-  // ─── Load card details ──────────────────────────────────────────────────
+  // ─── Load card ───────────────────────────────────────────────────────────
   useEffect(() => {
     setCardLoading(true);
     setCardError(null);
@@ -87,10 +73,10 @@ const MaintenanceDetailPanel = ({ request, actorId, onClose, onUpdated }: Props)
     maintenanceApi
       .getCard(request.id)
       .then((res) => {
-        setCard(res.data);
-        // Pre-select existing technician if any
-        if (res.data.assignedTechnician) {
-          setSelectedTech(res.data.assignedTechnician.technicianId);
+        const data = res.data;
+        setCard(data);
+        if (data.assignment?.technicianId) {
+          setSelectedTech(data.assignment.technicianId);
         }
       })
       .catch((err) => setCardError(getApiError(err)))
@@ -99,12 +85,10 @@ const MaintenanceDetailPanel = ({ request, actorId, onClose, onUpdated }: Props)
 
   // ─── Load technicians ────────────────────────────────────────────────────
   useEffect(() => {
-    setTechLoading(true);
     maintenanceApi
       .listTechnicians(false)
       .then((res) => setTechnicians(Array.isArray(res.data) ? res.data : []))
-      .catch(() => {/* non-critical */})
-      .finally(() => setTechLoading(false));
+      .catch(() => {});
   }, []);
 
   // ─── Actions ─────────────────────────────────────────────────────────────
@@ -141,22 +125,24 @@ const MaintenanceDetailPanel = ({ request, actorId, onClose, onUpdated }: Props)
     }
   };
 
-  // ─── Derived display data ─────────────────────────────────────────────────
-  const residentName = card?.resident.fullName ?? request.residentName ?? "—";
-  const residentUnit = card?.resident.unitLabel ?? request.residentUnit ?? request.location;
-  const residentPhone = card?.resident.phoneNumber ?? request.residentPhone ?? "—";
-  const residentEmail = card?.resident.email ?? request.residentEmail ?? "—";
-  const description = card?.description ?? request.description ?? "No description provided.";
-  const initials = getInitials(residentName) || "??";
-  const photos = card?.photoUrls ?? [];
-  const timeline = card?.timeline ?? [];
+  // ─── Display values (fallback to list-row data while card loads) ─────────
+  const residentName   = card?.requester.fullName   ?? request.residentName ?? "—";
+  const residentUnit   = card?.requester.unitNumber
+    ? `${card.requester.buildingName ?? ""} - Unit ${card.requester.unitNumber}`.trim().replace(/^-\s*/, "")
+    : request.residentUnit ?? request.location;
+  const residentPhone  = card?.requester.phone  ?? "—";
+  const residentEmail  = card?.requester.email  ?? "—";
+  const initials       = (card?.requester.initials ?? residentName.split(" ").filter(Boolean).map((w) => w[0]).join("").toUpperCase().slice(0, 2)) || "??";
+  const description    = card?.description ?? "No description provided.";
+  const photos         = card?.photos ?? [];
+  const timeline       = card?.timeline ?? [];
 
   return (
     <div className="bg-white rounded-2xl shadow-[0px_4px_20px_rgba(0,0,0,0.05)] flex flex-col h-full overflow-hidden">
       {/* Header */}
       <div className="flex items-start justify-between p-6 pb-5 border-b border-[#f3f4f6] flex-shrink-0">
         <h3 className="text-xl font-semibold text-[#2d3436] leading-tight pr-4">
-          {request.issue}
+          {card?.issueTitle ?? request.issue}
         </h3>
         <button
           onClick={onClose}
@@ -166,7 +152,7 @@ const MaintenanceDetailPanel = ({ request, actorId, onClose, onUpdated }: Props)
         </button>
       </div>
 
-      {/* Toast messages */}
+      {/* Toast */}
       {(saveSuccess || saveError) && (
         <div className={cn(
           "mx-6 mt-3 px-4 py-2 rounded-xl text-sm font-medium flex-shrink-0",
@@ -193,32 +179,30 @@ const MaintenanceDetailPanel = ({ request, actorId, onClose, onUpdated }: Props)
         )}
 
         {/* Resident Card */}
-        {!cardLoading && (
-          <div className="bg-[#f9fafb] rounded-xl p-4">
-            <div className="flex items-center gap-3 mb-3">
-              <div className="w-12 h-12 rounded-full bg-gradient-to-b from-[#00a996] to-[#008c7a] flex items-center justify-center flex-shrink-0">
-                <span className="text-white text-base font-semibold">{initials}</span>
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="font-semibold text-[#2d3436] text-base leading-tight">{residentName}</p>
-                <p className="text-[#00a996] text-sm">{residentUnit}</p>
-              </div>
-              <button className="w-8 h-8 rounded-xl flex items-center justify-center text-[#00a996] hover:bg-[#e0f2f1] transition-colors">
-                <MessageCircle className="w-4 h-4" />
-              </button>
+        <div className="bg-[#f9fafb] rounded-xl p-4">
+          <div className="flex items-center gap-3 mb-3">
+            <div className="w-12 h-12 rounded-full bg-gradient-to-b from-[#00a996] to-[#008c7a] flex items-center justify-center flex-shrink-0">
+              <span className="text-white text-base font-semibold">{initials}</span>
             </div>
-            <div className="space-y-2">
-              <div className="flex items-center gap-2 text-sm text-[#636e72]">
-                <Phone className="w-3.5 h-3.5 flex-shrink-0" />
-                <span>{residentPhone}</span>
-              </div>
-              <div className="flex items-center gap-2 text-sm text-[#636e72]">
-                <Mail className="w-3.5 h-3.5 flex-shrink-0" />
-                <span>{residentEmail}</span>
-              </div>
+            <div className="flex-1 min-w-0">
+              <p className="font-semibold text-[#2d3436] text-base leading-tight">{residentName}</p>
+              <p className="text-[#00a996] text-sm">{residentUnit}</p>
+            </div>
+            <button className="w-8 h-8 rounded-xl flex items-center justify-center text-[#00a996] hover:bg-[#e0f2f1] transition-colors">
+              <MessageCircle className="w-4 h-4" />
+            </button>
+          </div>
+          <div className="space-y-2">
+            <div className="flex items-center gap-2 text-sm text-[#636e72]">
+              <Phone className="w-3.5 h-3.5 flex-shrink-0" />
+              <span>{residentPhone}</span>
+            </div>
+            <div className="flex items-center gap-2 text-sm text-[#636e72]">
+              <Mail className="w-3.5 h-3.5 flex-shrink-0" />
+              <span>{residentEmail}</span>
             </div>
           </div>
-        )}
+        </div>
 
         {/* Set Priority */}
         <div className="pb-5 border-b border-[#f3f4f6]">
@@ -250,15 +234,12 @@ const MaintenanceDetailPanel = ({ request, actorId, onClose, onUpdated }: Props)
             <select
               value={selectedTech}
               onChange={(e) => setSelectedTech(e.target.value)}
-              disabled={techLoading}
-              className="w-full appearance-none border-2 border-[#e5e7eb] rounded-xl px-4 py-3 text-sm text-[#2d3436] bg-white outline-none focus:border-[#00a996] cursor-pointer transition-colors disabled:opacity-60"
+              className="w-full appearance-none border-2 border-[#e5e7eb] rounded-xl px-4 py-3 text-sm text-[#2d3436] bg-white outline-none focus:border-[#00a996] cursor-pointer transition-colors"
             >
-              <option value="">
-                {techLoading ? "Loading technicians…" : "Select technician…"}
-              </option>
+              <option value="">Select technician…</option>
               {technicians.map((t) => (
                 <option key={t.technicianId} value={t.technicianId}>
-                  {t.fullName}{!t.available ? " (busy)" : ""}
+                  {t.fullName}{!t.isAvailable ? " (busy)" : ""}
                 </option>
               ))}
             </select>
@@ -282,28 +263,30 @@ const MaintenanceDetailPanel = ({ request, actorId, onClose, onUpdated }: Props)
         </div>
 
         {/* Description + Photos */}
-        <div className="pb-5 border-b border-[#f3f4f6]">
-          <p className="text-base font-semibold text-[#2d3436] mb-2">Description</p>
-          <p className="text-sm text-[#636e72] leading-relaxed">{description}</p>
+        {!cardLoading && (
+          <div className="pb-5 border-b border-[#f3f4f6]">
+            <p className="text-base font-semibold text-[#2d3436] mb-2">Description</p>
+            <p className="text-sm text-[#636e72] leading-relaxed">{description}</p>
 
-          {photos.length > 0 && (
-            <>
-              <p className="text-base font-semibold text-[#2d3436] mt-4 mb-3">
-                Photos ({photos.length})
-              </p>
-              <div className="flex gap-2">
-                {photos.map((url, i) => (
-                  <img
-                    key={i}
-                    src={url}
-                    alt={`Photo ${i + 1}`}
-                    className="flex-1 aspect-square rounded-xl object-cover bg-[#e5e7eb]"
-                  />
-                ))}
-              </div>
-            </>
-          )}
-        </div>
+            {photos.length > 0 && (
+              <>
+                <p className="text-base font-semibold text-[#2d3436] mt-4 mb-3">
+                  Photos ({photos.length})
+                </p>
+                <div className="flex gap-2">
+                  {photos.map((url, i) => (
+                    <img
+                      key={i}
+                      src={url}
+                      alt={`Photo ${i + 1}`}
+                      className="flex-1 aspect-square rounded-xl object-cover bg-[#e5e7eb]"
+                    />
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
+        )}
 
         {/* Timeline */}
         {timeline.length > 0 && (
@@ -314,8 +297,15 @@ const MaintenanceDetailPanel = ({ request, actorId, onClose, onUpdated }: Props)
                 <div key={i} className="flex items-start gap-4">
                   <span className="mt-1.5 w-2 h-2 rounded-full bg-[#00a996] flex-shrink-0" />
                   <div>
-                    <p className="text-sm font-medium text-[#2d3436]">{item.label}</p>
-                    <p className="text-xs text-[#636e72]">{item.time}</p>
+                    <p className="text-sm font-medium text-[#2d3436]">{item.title}</p>
+                    <p className="text-xs text-[#636e72]">
+                      {item.occurredAt
+                        ? new Date(item.occurredAt).toLocaleString("en-US", {
+                            month: "short", day: "numeric",
+                            hour: "numeric", minute: "2-digit",
+                          })
+                        : ""}
+                    </p>
                   </div>
                 </div>
               ))}
