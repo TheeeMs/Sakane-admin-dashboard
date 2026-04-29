@@ -1,22 +1,12 @@
 import { useState, useMemo } from "react";
 import { ChevronDown, Home, Building2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import MaintenanceDetailPanel, { type MaintenanceRequest } from "./MaintenanceDetailPanel";
 
-// ─── Types ──────────────────────────────────────────────────────────────────────
+// ─── Types (shared via MaintenanceDetailPanel) ───────────────────────────────
 type RequestType = "Private" | "Public";
 type Priority = "High" | "Medium" | "Low";
 type Status = "Unassigned" | "Assigned" | "Completed" | "In Progress";
-
-interface MaintenanceRequest {
-  id: number;
-  type: RequestType;
-  requestId: string;
-  priority: Priority;
-  issue: string;
-  location: string;
-  dateTime: string;
-  status: Status;
-}
 
 // ─── Mock Data ───────────────────────────────────────────────────────────────────
 const REQUESTS: MaintenanceRequest[] = [
@@ -138,21 +128,9 @@ const STATUS_CONFIG: Record<
   },
 };
 
-const ROW_BG: Record<Status, string> = {
-  Unassigned: "bg-white",
-  Assigned: "bg-white",
-  Completed: "bg-white",
-  "In Progress": "bg-white",
-};
-
-// Row highlight based on first-row in Figma: Unassigned → teal tint, High priority → red tint
 function getRowBg(req: MaintenanceRequest) {
-  if (req.status === "Unassigned" && req.priority === "High" && req.type === "Public") {
-    return "bg-[#fef2f2]";
-  }
-  if (req.status === "Unassigned" && req.priority === "High" && req.type === "Private") {
-    return "bg-[#e0f2f1]";
-  }
+  if (req.status === "Unassigned" && req.priority === "High" && req.type === "Public") return "bg-[#fef2f2]";
+  if (req.status === "Unassigned" && req.priority === "High" && req.type === "Private") return "bg-[#e0f2f1]";
   return "bg-white";
 }
 
@@ -248,6 +226,7 @@ const MaintenancePage = () => {
   const [typeFilter, setTypeFilter] = useState<"All" | RequestType>("All");
   const [priorityFilter, setPriorityFilter] = useState<"All" | Priority>("All");
   const [statusFilter, setStatusFilter] = useState<"All" | Status>("All");
+  const [selectedRequest, setSelectedRequest] = useState<MaintenanceRequest | null>(null);
 
   const filtered = useMemo(() => {
     return REQUESTS.filter((r) => {
@@ -292,8 +271,9 @@ const MaintenancePage = () => {
         </div>
       </div>
 
-      {/* Table Card */}
-      <div className="bg-white rounded-2xl shadow-[0px_4px_20px_rgba(0,0,0,0.05)] overflow-hidden">
+      {/* Table + Detail Panel side-by-side */}
+      <div className="flex gap-5 items-start">
+      <div className={cn("bg-white rounded-2xl shadow-[0px_4px_20px_rgba(0,0,0,0.05)] overflow-hidden transition-all duration-300", selectedRequest ? "flex-1 min-w-0" : "w-full")}>
         {/* Filter Row */}
         <div className="flex items-center gap-3 px-6 py-4 border-b border-[#f3f4f6]">
           <FilterSelect
@@ -365,9 +345,10 @@ const MaintenancePage = () => {
                 filtered.map((req) => (
                   <tr
                     key={req.id}
+                    onClick={() => setSelectedRequest(req.id === selectedRequest?.id ? null : req)}
                     className={cn(
-                      "border-b border-[#f3f4f6] hover:bg-gray-50/60 transition-colors duration-100",
-                      getRowBg(req)
+                      "border-b border-[#f3f4f6] transition-colors duration-100 cursor-pointer",
+                      req.id === selectedRequest?.id ? "bg-[#e0f2f1]" : cn("hover:bg-gray-50/60", getRowBg(req))
                     )}
                   >
                     {/* Type */}
@@ -445,6 +426,17 @@ const MaintenancePage = () => {
             </div>
           </div>
         )}
+      </div>
+
+      {/* Detail Panel */}
+      {selectedRequest && (
+        <div className="w-[440px] flex-shrink-0 sticky top-4 max-h-[calc(100vh-7rem)] overflow-hidden">
+          <MaintenanceDetailPanel
+            request={selectedRequest}
+            onClose={() => setSelectedRequest(null)}
+          />
+        </div>
+      )}
       </div>
     </div>
   );
