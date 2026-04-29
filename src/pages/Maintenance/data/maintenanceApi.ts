@@ -2,7 +2,7 @@ import { httpClient } from "@/lib/api/httpClient";
 
 // ─── Enums matching backend ───────────────────────────────────────────────────
 export type MaintenanceTab = "ALL" | "PENDING" | "IN_PROGRESS" | "COMPLETED";
-export type MaintenanceSortBy = "NEWEST" | "OLDEST" | "PRIORITY";
+export type MaintenanceSortBy = "NEWEST" | "OLDEST";
 export type MaintenancePriority = "LOW" | "MEDIUM" | "HIGH" | "URGENT";
 export type MaintenanceStatus =
   | "SUBMITTED"

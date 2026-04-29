@@ -136,7 +136,7 @@ const MaintenancePage = () => {
   // Filters
   const [activeTab, setActiveTab] = useState<StatusTab>("All");
   const [typeFilter, setTypeFilter] = useState<"ALL" | "PRIVATE" | "PUBLIC">("ALL");
-  const [sortBy, setSortBy] = useState<"NEWEST" | "OLDEST" | "PRIORITY">("NEWEST");
+  const [sortBy, setSortBy] = useState<"NEWEST" | "OLDEST">("NEWEST");
 
   // Data
   const [requests, setRequests] = useState<MaintenanceRequest[]>([]);
@@ -250,7 +250,6 @@ const MaintenancePage = () => {
               options={[
                 { label: "Newest First", value: "NEWEST" },
                 { label: "Oldest First", value: "OLDEST" },
-                { label: "By Priority", value: "PRIORITY" },
               ]}
             />
             <p className="ml-auto text-xs text-gray-400 font-medium">
