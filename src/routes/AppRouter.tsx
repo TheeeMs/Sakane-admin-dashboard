@@ -8,6 +8,7 @@ import GateAccessPage from "@/pages/GateAccess/GateAccessPage";
 import { EventsPage } from "@/pages/Events/EventsPage";
 import { FeedbackPage } from "@/pages/Feedback/FeedbackPage";
 import { EmployeesPage } from "@/pages/Employees/EmployeesPage";
+import MaintenancePage from "@/pages/Maintenance/MaintenancePage";
 import LoginPage from "@/pages/Auth/LoginPage";
 import RequireAdminRoute from "./guards/RequireAdminRoute";
 
@@ -25,6 +26,7 @@ const AppRouter = () => {
           <Route path="/events" element={<EventsPage />} />
           <Route path="/feedback" element={<FeedbackPage />} />
           <Route path="/employees" element={<EmployeesPage />} />
+          <Route path="/maintenance" element={<MaintenancePage />} />
         </Route>
       </Route>
     </Routes>
