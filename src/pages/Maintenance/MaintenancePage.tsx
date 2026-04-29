@@ -161,9 +161,11 @@ const MaintenancePage = () => {
         page,
         size: 20,
       });
-      setRequests(res.data.requests.map(toDisplayRequest));
-      setTotalPages(res.data.totalPages);
-      setTotalElements(res.data.totalElements);
+      const data = res.data;
+      const list = Array.isArray(data?.requests) ? data.requests : [];
+      setRequests(list.map(toDisplayRequest));
+      setTotalPages(data?.totalPages ?? 1);
+      setTotalElements(data?.totalElements ?? list.length);
     } catch (err) {
       setError(getApiError(err));
     } finally {

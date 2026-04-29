@@ -102,7 +102,7 @@ const MaintenanceDetailPanel = ({ request, actorId, onClose, onUpdated }: Props)
     setTechLoading(true);
     maintenanceApi
       .listTechnicians(false)
-      .then((res) => setTechnicians(res.data))
+      .then((res) => setTechnicians(Array.isArray(res.data) ? res.data : []))
       .catch(() => {/* non-critical */})
       .finally(() => setTechLoading(false));
   }, []);
