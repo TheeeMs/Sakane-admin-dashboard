@@ -1,11 +1,29 @@
+
+import {
+  Bell,
+  Calendar,
+  CheckCircle2,
+  Edit3,
+  Link2,
+  MapPin,
+  Phone,
+  Tag as TagIcon,
+  Trash2,
+  User as UserIcon,
+  X,
+} from "lucide-react";
 import type { Report } from "../types";
 import TypeBadge from "./TypeBadge";
 import StatusBadge from "./StatusBadge";
-import { CloseIcon, TagIcon, MapPinIcon, PhoneIcon, UserIcon, CalendarIcon } from "./icons";
 
 interface ReportModalProps {
   report: Report | null;
   onClose: () => void;
+  onEdit?: (report: Report) => void;
+  onMarkResolved?: (report: Report) => void;
+  onMarkMatched?: (report: Report) => void;
+  onNotifyUser?: (report: Report) => void;
+  onDelete?: (report: Report) => void;
 }
 
 interface DetailItemProps {
@@ -16,78 +34,186 @@ interface DetailItemProps {
 
 function DetailItem({ icon, label, value }: DetailItemProps) {
   return (
-    <div style={{ background: "#f9fafb", border: "1px solid #f3f4f6", borderRadius: 10, padding: "10px 14px" }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 5, color: "#9ca3af", fontSize: 12, marginBottom: 4 }}>
-        {icon} {label}
+    <div className="bg-gray-50 border border-gray-100 rounded-xl px-4 py-4">
+      <div className="flex items-center gap-2 text-gray-400 text-xs font-medium mb-2">
+        {icon}
+        {label}
       </div>
-      <div style={{ fontSize: 13, fontWeight: 600, color: "#111827", whiteSpace: "pre-line" }}>{value}</div>
+
+      <div className="text-sm font-semibold text-gray-900 whitespace-pre-line leading-relaxed">
+        {value || "-"}
+      </div>
     </div>
   );
 }
 
-const ACTION_BTNS = [
-  { label: "✏️  Edit",         bg: "#10b981", color: "#fff",    border: "#10b981" },
-  { label: "✓  Mark Resolved", bg: "#fff",    color: "#16a34a", border: "#16a34a" },
-  { label: "🔗  Mark Matched", bg: "#fff",    color: "#d97706", border: "#d97706" },
-  { label: "🔔  Notify User",  bg: "#fff",    color: "#3b82f6", border: "#3b82f6" },
-];
-
-export default function ReportModal({ report, onClose }: ReportModalProps) {
+export default function ReportModal({
+  report,
+  onClose,
+  onEdit,
+  onMarkResolved,
+  onMarkMatched,
+  onNotifyUser,
+  onDelete,
+}: ReportModalProps) {
   if (!report) return null;
-  return (
-    <div style={{ position: "fixed", inset: 0, zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center", padding: 16, background: "rgba(0,0,0,0.45)" }}
-      onClick={onClose}>
-      <div style={{ background: "#fff", borderRadius: 18, width: "100%", maxWidth: 530, boxShadow: "0 20px 60px rgba(0,0,0,0.2)", overflow: "hidden" }}
-        onClick={(e) => e.stopPropagation()}>
 
+  const reportDateFormatted = `${report.date}${
+    report.date && !report.date.includes(":") ? " at 02:30 PM" : ""
+  }`;
+
+  return (
+    <div
+      className="fixed inset-0 z-[100] bg-black/40 flex items-center justify-center p-4"
+      onClick={onClose}
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="w-full max-w-[760px] max-h-[92vh] overflow-hidden rounded-[24px] bg-white shadow-2xl flex flex-col"
+      >
         {/* Header */}
-        <div style={{ padding: "20px 24px 16px", borderBottom: "1px solid #f3f4f6", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <span style={{ fontWeight: 700, fontSize: 16, color: "#111827" }}>Report Details</span>
-          <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", color: "#9ca3af", display: "flex", padding: 0 }}>
-            <CloseIcon />
+        <div className="flex items-center justify-between px-6 py-5 border-b border-gray-100">
+          <h2 className="text-lg font-bold text-gray-900">Report Details</h2>
+
+          <button
+            onClick={onClose}
+            className="w-9 h-9 rounded-full hover:bg-gray-100 flex items-center justify-center text-gray-400 hover:text-gray-700 transition"
+          >
+            <X className="w-4 h-4" />
           </button>
         </div>
 
         {/* Body */}
-        <div style={{ padding: "20px 24px", maxHeight: "65vh", overflowY: "auto", display: "flex", flexDirection: "column", gap: 16 }}>
-          <div style={{ display: "flex", gap: 8 }}>
+        <div className="flex-1 overflow-y-auto px-6 py-5 space-y-6">
+          {/* Status */}
+          <div className="flex items-center gap-2">
             <TypeBadge type={report.type} />
             <StatusBadge status={report.status} />
           </div>
+
+          {/* Title */}
           <div>
-            <div style={{ fontSize: 19, fontWeight: 700, color: "#111827" }}>{report.title}</div>
-            <div style={{ display: "flex", alignItems: "center", gap: 5, color: "#6b7280", fontSize: 13, marginTop: 5 }}>
-              <TagIcon /> {report.category}
+            <h3 className="text-[28px] font-bold text-gray-900 leading-tight">
+              {report.title}
+            </h3>
+
+            <div className="flex items-center gap-2 text-sm text-gray-500 mt-2">
+              <TagIcon className="w-4 h-4" />
+              <span>{report.category}</span>
             </div>
           </div>
+
+          {/* Photo */}
           {report.photo && (
             <div>
-              <div style={{ fontSize: 13, fontWeight: 600, color: "#374151", marginBottom: 8 }}>Photos</div>
-              <img src={report.photo} alt={report.title} style={{ width: 190, height: 145, objectFit: "cover", borderRadius: 12, border: "1px solid #e5e7eb" }} />
+              <h4 className="text-sm font-semibold text-gray-800 mb-3">
+                Photos
+              </h4>
+
+              <img
+                  src={report.photo || "/placeholder.jpg"}
+                 alt={report.title}
+                 className="w-[220px] h-[150px] rounded-xl object-cover border border-gray-200"
+              />
             </div>
           )}
+
+          {/* Description */}
           <div>
-            <div style={{ fontSize: 13, fontWeight: 600, color: "#374151", marginBottom: 6 }}>Detailed Description</div>
-            <div style={{ background: "#f9fafb", border: "1px solid #f3f4f6", borderRadius: 10, padding: "10px 14px", fontSize: 13, color: "#4b5563", lineHeight: 1.65 }}>
-              {report.fullDesc}
+            <h4 className="text-sm font-semibold text-gray-800 mb-3">
+              Detailed Description
+            </h4>
+
+            <div className="rounded-xl border border-gray-100 bg-gray-50 px-4 py-4 text-sm text-gray-700 leading-relaxed">
+              {report.fullDesc || "No description provided."}
             </div>
           </div>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-            <DetailItem icon={<MapPinIcon />}   label="Last Seen Location" value={report.location} />
-            <DetailItem icon={<PhoneIcon />}    label="Contact Number"    value={report.contact} />
-            <DetailItem icon={<UserIcon />}     label="Reported By"       value={`${report.reportedBy}\n${report.unit}`} />
-            <DetailItem icon={<CalendarIcon />} label="Report Date"       value={`${report.date} at 08:00 AM`} />
+
+          {/* Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <DetailItem
+              icon={<MapPin className="w-4 h-4" />}
+              label="Last Seen Location"
+              value={report.location}
+            />
+
+            <DetailItem
+              icon={<Phone className="w-4 h-4" />}
+              label="Contact Number"
+              value={report.contact}
+            />
+
+            <DetailItem
+              icon={<UserIcon className="w-4 h-4" />}
+              label="Reported By"
+              value={`${report.reportedBy}\n${report.unit}`}
+            />
+
+            <DetailItem
+              icon={<Calendar className="w-4 h-4" />}
+              label="Report Date"
+              value={reportDateFormatted}
+            />
           </div>
         </div>
 
         {/* Footer */}
-        <div style={{ padding: "14px 24px", borderTop: "1px solid #f3f4f6", display: "flex", flexWrap: "wrap", gap: 8 }}>
-          {ACTION_BTNS.map((btn) => (
-            <button key={btn.label} style={{ background: btn.bg, color: btn.color, border: `1px solid ${btn.border}`, borderRadius: 10, padding: "8px 14px", fontWeight: 600, fontSize: 13, cursor: "pointer" }}>
-              {btn.label}
-            </button>
-          ))}
-          <button onClick={onClose} style={{ background: "#fff", color: "#6b7280", border: "1px solid #e5e7eb", borderRadius: 10, padding: "8px 14px", fontWeight: 600, fontSize: 13, cursor: "pointer", marginLeft: "auto" }}>
+        <div className="px-6 py-4 border-t border-gray-100 flex flex-wrap gap-3 items-center">
+          {/* Edit */}
+          <button
+            onClick={() => {
+              onEdit?.(report);
+              onClose();
+            }}
+            className="h-11 px-5 rounded-xl bg-[#00A389] hover:bg-[#008A74] text-white text-sm font-semibold flex items-center gap-2 transition"
+          >
+            <Edit3 className="w-4 h-4" />
+            Edit
+          </button>
+
+          {/* Resolve */}
+          <button
+            onClick={() => onMarkResolved?.(report)}
+            className="h-11 px-5 rounded-xl border border-green-500 text-green-600 hover:bg-green-50 text-sm font-semibold flex items-center gap-2 transition"
+          >
+            <CheckCircle2 className="w-4 h-4" />
+            Mark Resolved
+          </button>
+
+          {/* Match */}
+          <button
+            onClick={() => onMarkMatched?.(report)}
+            className="h-11 px-5 rounded-xl border border-orange-400 text-orange-500 hover:bg-orange-50 text-sm font-semibold flex items-center gap-2 transition"
+          >
+            <Link2 className="w-4 h-4" />
+            Mark Matched
+          </button>
+
+          {/* Notify */}
+          <button
+            onClick={() => onNotifyUser?.(report)}
+            className="h-11 px-5 rounded-xl border border-blue-500 text-blue-600 hover:bg-blue-50 text-sm font-semibold flex items-center gap-2 transition"
+          >
+            <Bell className="w-4 h-4" />
+            Notify User
+          </button>
+
+          {/* Delete */}
+          <button
+            onClick={() => {
+              onDelete?.(report);
+              onClose();
+            }}
+            className="h-11 w-11 rounded-xl border border-red-200 text-red-500 hover:bg-red-50 flex items-center justify-center transition"
+          >
+            <Trash2 className="w-4 h-4" />
+          </button>
+
+          {/* Close */}
+          <button
+            onClick={onClose}
+            className="ml-auto h-11 px-6 rounded-xl border border-gray-200 text-gray-700 hover:bg-gray-50 text-sm font-semibold transition"
+          >
             Close
           </button>
         </div>
