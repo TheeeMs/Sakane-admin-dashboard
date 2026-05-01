@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useMemo } from "react";
 import { Search } from "lucide-react";
 import type {
   Feedback,
@@ -13,6 +13,19 @@ interface FeedbackListProps {
   onViewDetails: (feedback: Feedback) => void;
   onRespond: (feedback: Feedback) => void;
   onDelete: (feedback: Feedback) => void;
+  activeTab: FeedbackType;
+  onTabChange: (tab: FeedbackType) => void;
+  searchQuery: string;
+  onSearchChange: (value: string) => void;
+  statusFilter: FeedbackStatus | "ALL";
+  onStatusChange: (value: FeedbackStatus | "ALL") => void;
+  categoryFilter: FeedbackCategory | "ALL";
+  onCategoryChange: (value: FeedbackCategory | "ALL") => void;
+  statusOptions: string[];
+  categoryOptions: string[];
+  publicCount: number;
+  privateCount: number;
+  isLoading?: boolean;
 }
 
 export function FeedbackList({
@@ -20,58 +33,36 @@ export function FeedbackList({
   onViewDetails,
   onRespond,
   onDelete,
+  activeTab,
+  onTabChange,
+  searchQuery,
+  onSearchChange,
+  statusFilter,
+  onStatusChange,
+  categoryFilter,
+  onCategoryChange,
+  statusOptions,
+  categoryOptions,
+  publicCount,
+  privateCount,
+  isLoading = false,
 }: FeedbackListProps) {
-  const [activeTab, setActiveTab] = useState<FeedbackType>("public");
-  const [searchQuery, setSearchQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState<FeedbackStatus | "all">(
-    "all",
+  const statusOptionsWithAll = useMemo(() => {
+    const options = ["ALL", ...statusOptions];
+    return Array.from(new Set(options));
+  }, [statusOptions]);
+
+  const categoryOptionsWithAll = useMemo(
+    () => ["All Categories", ...categoryOptions],
+    [categoryOptions],
   );
-  const [categoryFilter, setCategoryFilter] = useState<
-    FeedbackCategory | "all"
-  >("all");
-
-  // Filter feedback
-  const filteredFeedback = useMemo(() => {
-    return feedbackList.filter((feedback) => {
-      // Tab filter
-      if (feedback.type !== activeTab) return false;
-
-      // Search filter
-      if (searchQuery) {
-        const query = searchQuery.toLowerCase();
-        const matchesTitle = feedback.title.toLowerCase().includes(query);
-        const matchesDescription = feedback.description
-          .toLowerCase()
-          .includes(query);
-        const matchesAuthor = feedback.author.name
-          .toLowerCase()
-          .includes(query);
-        if (!matchesTitle && !matchesDescription && !matchesAuthor)
-          return false;
-      }
-
-      // Status filter
-      if (statusFilter !== "all" && feedback.status !== statusFilter)
-        return false;
-
-      // Category filter
-      if (categoryFilter !== "all" && feedback.category !== categoryFilter)
-        return false;
-
-      return true;
-    });
-  }, [feedbackList, activeTab, searchQuery, statusFilter, categoryFilter]);
-
-  // Count feedback by type
-  const publicCount = feedbackList.filter((f) => f.type === "public").length;
-  const privateCount = feedbackList.filter((f) => f.type === "private").length;
 
   return (
     <div className="space-y-6">
       {/* Tabs */}
       <div className="flex gap-2 border-b border-gray-200">
         <button
-          onClick={() => setActiveTab("public")}
+          onClick={() => onTabChange("public")}
           className={`px-6 py-3 font-semibold transition-colors relative ${
             activeTab === "public"
               ? "text-teal-600"
@@ -84,7 +75,7 @@ export function FeedbackList({
           )}
         </button>
         <button
-          onClick={() => setActiveTab("private")}
+          onClick={() => onTabChange("private")}
           className={`px-6 py-3 font-semibold transition-colors relative ${
             activeTab === "private"
               ? "text-teal-600"
@@ -107,7 +98,7 @@ export function FeedbackList({
             type="text"
             placeholder="Search feedback..."
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            onChange={(e) => onSearchChange(e.target.value)}
             className="w-full pl-12 pr-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
           />
         </div>
@@ -116,39 +107,49 @@ export function FeedbackList({
         <select
           value={statusFilter}
           onChange={(e) =>
-            setStatusFilter(e.target.value as FeedbackStatus | "all")
+            onStatusChange(e.target.value as FeedbackStatus | "ALL")
           }
           className="px-4 py-3 rounded-lg border border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent cursor-pointer"
         >
-          <option value="all">All Status</option>
-          <option value="pending">Pending</option>
-          <option value="under-review">Under Review</option>
-          <option value="resolved">Resolved</option>
-          <option value="rejected">Rejected</option>
+          {statusOptionsWithAll.map((status) => (
+            <option key={status} value={status}>
+              {status === "ALL"
+                ? "All Status"
+                : status
+                    .toLowerCase()
+                    .replace(/_/g, " ")
+                    .replace(/\b\w/g, (match) => match.toUpperCase())}
+            </option>
+          ))}
         </select>
 
         {/* Category Filter */}
         <select
           value={categoryFilter}
           onChange={(e) =>
-            setCategoryFilter(e.target.value as FeedbackCategory | "all")
+            onCategoryChange(e.target.value as FeedbackCategory | "ALL")
           }
           className="px-4 py-3 rounded-lg border border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent cursor-pointer"
         >
-          <option value="all">All Categories</option>
-          <option value="facilities">Facilities</option>
-          <option value="services">Services</option>
-          <option value="events">Events</option>
-          <option value="maintenance">Maintenance</option>
-          <option value="security">Security</option>
-          <option value="other">Other</option>
+          {categoryOptionsWithAll.map((category) => (
+            <option
+              key={category}
+              value={category === "All Categories" ? "ALL" : category}
+            >
+              {category}
+            </option>
+          ))}
         </select>
       </div>
 
       {/* Feedback List */}
-      {filteredFeedback.length > 0 ? (
+      {isLoading ? (
+        <div className="text-center py-12 bg-gray-50 rounded-xl">
+          <p className="text-gray-500 text-lg">Loading feedback...</p>
+        </div>
+      ) : feedbackList.length > 0 ? (
         <div className="space-y-4">
-          {filteredFeedback.map((feedback) => (
+          {feedbackList.map((feedback) => (
             <FeedbackCard
               key={feedback.id}
               feedback={feedback}
@@ -162,13 +163,13 @@ export function FeedbackList({
         <div className="text-center py-12 bg-gray-50 rounded-xl">
           <p className="text-gray-500 text-lg">No feedback found</p>
           {(searchQuery ||
-            statusFilter !== "all" ||
-            categoryFilter !== "all") && (
+            statusFilter !== "ALL" ||
+            categoryFilter !== "ALL") && (
             <button
               onClick={() => {
-                setSearchQuery("");
-                setStatusFilter("all");
-                setCategoryFilter("all");
+                onSearchChange("");
+                onStatusChange("ALL");
+                onCategoryChange("ALL");
               }}
               className="mt-4 text-teal-600 hover:text-teal-700 font-medium"
             >
