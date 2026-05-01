@@ -24,19 +24,25 @@ const axiosInstance = axios.create({
 });
 
 /* ── Request interceptor: attach auth token if present ── */
+const AUTH_TOKENS_KEY = "sakany_admin_auth_tokens";
+
+function readAccessToken(): string | null {
+  try {
+    const raw = localStorage.getItem(AUTH_TOKENS_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as { accessToken?: string };
+    return parsed?.accessToken ?? null;
+  } catch {
+    return null;
+  }
+}
+
 axiosInstance.interceptors.request.use(
   (config) => {
-    // نجرب من أكتر من مفتاح في localStorage (defensive)
-    const token =
-      localStorage.getItem("token") ??
-      localStorage.getItem("accessToken") ??
-      localStorage.getItem("sakane_access_token") ??
-      localStorage.getItem("sakane_token");
-
+    const token = readAccessToken();
     if (token && config.headers) {
       config.headers.Authorization = `Bearer ${token}`;
     }
-
     return config;
   },
   (error) => Promise.reject(error)

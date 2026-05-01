@@ -19,68 +19,16 @@ import {
   notifyUser,
 } from "./api/missingFoundApi";
 import { StatCard } from "@/components/shared/StatCard";
+import { useAuthStore } from "@/features/auth";
 import ReportTable from "./components/ReportTable";
 import ReportModal from "./components/ReportModal";
 import CreateReportModal from "./components/CreateReportModel";
 import DeleteConfirmModal from "./components/DeleteConfirmModal";
 import { CircleAlert, CircleCheckBig, Clock4, Package } from "lucide-react";
 
-/** Decode JWT payload (no signature verification) */
-function decodeJWT(token: string): Record<string, unknown> | null {
-  try {
-    const parts = token.split(".");
-    if (parts.length !== 3) return null;
-    const payload = parts[1];
-    const padded = payload + "=".repeat((4 - (payload.length % 4)) % 4);
-    const decoded = atob(padded.replace(/-/g, "+").replace(/_/g, "/"));
-    return JSON.parse(decoded);
-  } catch {
-    return null;
-  }
-}
-
-/** يقرأ الـ user UUID من أي مفتاح متاح، وآخر حاجة من الـ JWT token نفسه */
-function getStoredUserId(): string | undefined {
-  // 1) localStorage keys
-  const candidates = ["userId", "sakane_user_id"];
-  for (const key of candidates) {
-    const v = localStorage.getItem(key);
-    if (v) return v;
-  }
-  // 2) الـ user object
-  try {
-    const raw =
-      localStorage.getItem("user") ?? localStorage.getItem("sakane_user");
-    if (raw) {
-      const parsed = JSON.parse(raw);
-      const id = parsed?.id ?? parsed?.userId ?? parsed?.sub;
-      if (id) return String(id);
-    }
-  } catch {
-    /* ignore */
-  }
-  // 3) Decode JWT — الـ sub claim عادة بيكون فيه الـ userId
-  const token =
-    localStorage.getItem("token") ??
-    localStorage.getItem("accessToken") ??
-    localStorage.getItem("sakane_access_token") ??
-    localStorage.getItem("sakane_token");
-  if (token) {
-    const decoded = decodeJWT(token);
-    if (decoded) {
-      const id =
-        (decoded.sub as string | undefined) ??
-        (decoded.userId as string | undefined) ??
-        (decoded.user_id as string | undefined) ??
-        (decoded.id as string | undefined);
-      if (id) return String(id);
-    }
-  }
-  return undefined;
-}
-
 export default function MissingFound() {
-  const reporterId = getStoredUserId();
+  // الـ reporterId يجي من الـ auth store اللي بيحط فيه main بيانات المستخدم
+  const reporterId = useAuthStore((state) => state.user?.id);
 
   /* ── Server data ── */
   const [reports, setReports] = useState<Report[]>([]);
