@@ -53,6 +53,60 @@ const ADMIN_ROLE = "ADMIN";
 
 const isAdminUser = (user: AuthUser): boolean => user.role === ADMIN_ROLE;
 
+/**
+ * Fallback: لو الـ backend ما عندوش endpoint /v1/auth/me أو فشل،
+ * نستخرج بيانات المستخدم من الـ JWT access token مباشرة.
+ */
+function decodeJwtPayload(token: string): Record<string, unknown> | null {
+  try {
+    const parts = token.split(".");
+    if (parts.length !== 3) return null;
+    const payload = parts[1];
+    const padded = payload + "=".repeat((4 - (payload.length % 4)) % 4);
+    const decoded = atob(padded.replace(/-/g, "+").replace(/_/g, "/"));
+    return JSON.parse(decoded) as Record<string, unknown>;
+  } catch {
+    return null;
+  }
+}
+
+function buildUserFromJwt(accessToken: string): AuthUser | null {
+  const claims = decodeJwtPayload(accessToken);
+  if (!claims) return null;
+
+  const id =
+    (claims.userId as string) ??
+    (claims.sub as string) ??
+    (claims.id as string) ??
+    "";
+  if (!id) return null;
+
+  let role = "";
+  if (typeof claims.role === "string") {
+    role = claims.role;
+  } else if (Array.isArray(claims.authorities) && claims.authorities[0]) {
+    role = String(claims.authorities[0]).replace(/^ROLE_/, "");
+  } else if (typeof claims.authorities === "string") {
+    role = claims.authorities.replace(/^ROLE_/, "");
+  }
+
+  const fullName = (claims.name as string) ?? "";
+  const [first = "", ...rest] = fullName.split(" ");
+  const last = rest.join(" ");
+
+  return {
+    id,
+    firstName: (claims.firstName as string) ?? first,
+    lastName: (claims.lastName as string) ?? last,
+    phoneNumber: (claims.phoneNumber as string) ?? "",
+    email: (claims.email as string) ?? null,
+    role,
+    isActive: true,
+    isPhoneVerified: false,
+    loginMethod: "EMAIL",
+  };
+}
+
 const applyTokens = (
   tokens: AuthTokens | null,
   set: (partial: Partial<AuthStore>) => void,
@@ -196,6 +250,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
   },
 
   fetchMe: async () => {
+    // 1) جرّب /v1/auth/me الأول
     try {
       const { data } = await authApi.me();
       if (!isAdminUser(data)) {
@@ -204,12 +259,30 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
         set({ error: message });
         throw new Error(message);
       }
-
       set({ user: data, isAuthenticated: true });
-    } catch (error) {
-      const message = getApiErrorMessage(error);
+      return;
+    } catch (meError) {
+      // 2) Fallback: لو /me فشل (مثلاً 404)، نفك الـ JWT.
+      const accessToken =
+        get().tokens?.accessToken ?? tokenStorage.getTokens()?.accessToken;
+
+      if (accessToken) {
+        const fallbackUser = buildUserFromJwt(accessToken);
+        if (fallbackUser && isAdminUser(fallbackUser)) {
+          set({ user: fallbackUser, isAuthenticated: true, error: null });
+          return;
+        }
+        if (fallbackUser && !isAdminUser(fallbackUser)) {
+          applyTokens(null, set);
+          const message = "Admin access only";
+          set({ error: message });
+          throw new Error(message);
+        }
+      }
+
+      const message = getApiErrorMessage(meError);
       set({ error: message });
-      throw error;
+      throw meError;
     }
   },
 

@@ -6,15 +6,12 @@ import "./index.css";
 import App from "./App.tsx";
 import { Toaster } from "@/components/ui/sonner";
 import { BrowserRouter } from "react-router-dom";
-import { AuthProvider } from "./context/AuthProvider";
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <BrowserRouter>
-      <AuthProvider>
-        <App />
-        <Toaster />
-      </AuthProvider>
+      <App />
+      <Toaster />
     </BrowserRouter>
   </StrictMode>,
 );
