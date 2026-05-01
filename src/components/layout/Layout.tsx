@@ -6,7 +6,7 @@ import Topbar from "./Topbar";
 const BREADCRUMB_MAP: Record<string, string> = {
   "/": "Dashboard",
   "/residents": "Residents",
-  "/maintenance": "Maintenance",
+  "/maintenance": "Maintenance Command Center",
   "/payments": "Payments",
   "/gate-access": "Gate Access",
   "/events": "Events",

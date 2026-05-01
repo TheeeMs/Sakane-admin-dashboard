@@ -26,7 +26,6 @@ export function FeedbackCard({
   onDelete,
 }: FeedbackCardProps) {
   const { upvotes = 0, downvotes = 0 } = feedback.votes;
-  const netVotes = upvotes - downvotes;
 
   return (
     <div className="bg-white rounded-xl border border-gray-200 p-6 hover:shadow-md transition-shadow duration-200">
@@ -36,10 +35,13 @@ export function FeedbackCard({
           <button className="p-2 rounded-lg hover:bg-gray-100 transition-colors">
             <ThumbsUp className="w-5 h-5 text-gray-600" />
           </button>
-          <span className="text-lg font-bold text-gray-900">{netVotes}</span>
+          <span className="text-sm font-semibold text-gray-700">{upvotes}</span>
           <button className="p-2 rounded-lg hover:bg-gray-100 transition-colors">
             <ThumbsDown className="w-5 h-5 text-gray-600" />
           </button>
+          <span className="text-sm font-semibold text-gray-700">
+            {downvotes}
+          </span>
         </div>
 
         {/* Content Section */}
