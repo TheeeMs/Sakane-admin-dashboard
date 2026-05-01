@@ -2,6 +2,7 @@ export * from "./PendingBanner";
 export * from "./EventCard";
 export * from "./EventsGrid";
 export * from "./EventDetailsModal";
+export * from "./CreateEventModal";
 
 // Shared Components
 export * from "./shared/StatusBadge";

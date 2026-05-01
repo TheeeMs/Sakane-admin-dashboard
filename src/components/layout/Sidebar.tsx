@@ -15,6 +15,7 @@ import {
   Settings,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useAuthStore } from "@/features/auth";
 
 const navSections = [
   {
@@ -54,6 +55,8 @@ const navSections = [
 
 const Sidebar = () => {
   const location = useLocation();
+  const { user } = useAuthStore();
+  const fullName = user ? `${user.firstName} ${user.lastName}` : "Admin";
 
   return (
     <aside className="w-[220px] min-h-screen bg-[#00A389] flex flex-col fixed left-0 top-0 z-40 shadow-xl">
@@ -117,8 +120,8 @@ const Sidebar = () => {
             <Users className="w-4 h-4 text-white" />
           </div>
           <div>
-            <p className="text-white text-xs font-semibold">Sakane Admin</p>
-            <p className="text-white/50 text-[10px]">Version 1.0.0</p>
+            <p className="text-white text-xs font-semibold">{fullName}</p>
+            <p className="text-white/50 text-[10px]">{user?.role ?? "Admin"}</p>
           </div>
         </div>
       </div>

@@ -10,6 +10,9 @@ interface EventCardProps {
 }
 
 export function EventCard({ event, onCardClick }: EventCardProps) {
+  const organizer = event.organizer ?? { name: "Unknown organizer" };
+  const tags = event.tags ?? [];
+
   return (
     <div
       onClick={() => onCardClick?.(event)}
@@ -82,25 +85,23 @@ export function EventCard({ event, onCardClick }: EventCardProps) {
         {/* Organizer */}
         <div className="flex items-center gap-3 pb-4 border-b border-gray-200 mb-4">
           <img
-            src={event.organizer.avatar || "https://i.pravatar.cc/150"}
-            alt={event.organizer.name}
+            src={organizer.avatar || "https://i.pravatar.cc/150"}
+            alt={organizer.name}
             className="w-8 h-8 rounded-full"
           />
           <div className="flex-1 min-w-0">
             <p className="text-sm font-medium text-gray-900 truncate">
-              {event.organizer.name}
+              {organizer.name}
             </p>
-            {event.organizer.unit && (
-              <p className="text-xs text-gray-500 truncate">
-                {event.organizer.unit}
-              </p>
+            {organizer.unit && (
+              <p className="text-xs text-gray-500 truncate">{organizer.unit}</p>
             )}
           </div>
         </div>
 
         {/* Tags */}
         <div className="flex flex-wrap gap-2">
-          {event.tags.slice(0, 3).map((tag: string, index: number) => (
+          {tags.slice(0, 3).map((tag: string, index: number) => (
             <span
               key={index}
               className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-gray-100 text-gray-700"
@@ -108,9 +109,9 @@ export function EventCard({ event, onCardClick }: EventCardProps) {
               {tag}
             </span>
           ))}
-          {event.tags.length > 3 && (
+          {tags.length > 3 && (
             <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-gray-100 text-gray-700">
-              +{event.tags.length - 3}
+              +{tags.length - 3}
             </span>
           )}
         </div>
