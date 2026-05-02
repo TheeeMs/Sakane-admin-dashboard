@@ -53,14 +53,20 @@ axiosInstance.interceptors.request.use(
  *   { type, title, status, detail, instance, ... }
  * Spring/Spring Boot شائع: { message, error, status, path, errors[] }
  */
+interface ApiFieldError {
+  message?: string;
+  field?: string;
+  defaultMessage?: string;
+}
+
 interface ApiErrorBody {
   message?: string;
   error?: string;
   detail?: string;
   title?: string;
-  errors?: Array<{ message?: string; field?: string; defaultMessage?: string }>;
-  fieldErrors?: Array<{ message?: string; field?: string }>;
-  violations?: Array<{ message?: string; field?: string }>;
+  errors?: ApiFieldError[];
+  fieldErrors?: ApiFieldError[];
+  violations?: ApiFieldError[];
 }
 
 function extractApiErrorMessage(body: ApiErrorBody | undefined): string | null {

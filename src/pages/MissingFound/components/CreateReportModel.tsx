@@ -34,7 +34,8 @@ export default function CreateReportModal({
   onSubmit,
   initial,
   submitting = false,
-  hasReporterId = false,
+  // hasReporterId مش بنستخدمها دلوقتي — الـ residentId اختياري دائماً
+  // والـ backend هو اللي بيقرر يقبل reporterId/residentId.
 }: CreateReportModalProps) {
   const isEdit = Boolean(initial);
   const bodyRef = useRef<HTMLDivElement>(null);
