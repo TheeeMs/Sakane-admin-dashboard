@@ -1,146 +1,442 @@
-import { useState } from "react";
-import type { Report, ReportStatus, ReportType } from "./types";
-import {StatCard} from "@/components/shared/StatCard";
+import { useEffect, useState } from "react";
+import type { Report, ReportCategory, ReportStatus, ReportType } from "./types";
+import { StatCard } from "@/components/shared/StatCard";
 import ReportTable from "./components/ReportTable";
 import ReportModal from "./components/ReportModal";
-
-import CreateReportModal from "./components/CreateReportModel";
+import CreateReportModal, {
+  type ReportFormData,
+} from "./components/CreateReportModel";
 import DeleteConfirmModal from "./components/DeleteConfirmModal";
 import { CircleAlert, CircleCheckBig, Clock4, Package } from "lucide-react";
+import {
+  missingFoundApi,
+  type MissingFoundReportDetailsDto,
+  type MissingFoundReportItemDto,
+} from "./data/missingFoundApi";
 
-const INITIAL_REPORTS: Report[] = [
-  { id: 1, type: "Missing", category: "Item",    title: "Car Keys with Blue Keychain",      shortDesc: "Lost my car",  location: "Near swimming pool area", reportedBy: "Ahmed Hassan",  unit: "A-101", status: "Open",     date: "Feb 11, 2026", contact: "+20 100 123 4567", fullDesc: "Lost my car keys near the swimming pool area. Blue keychain attached with a small tag.", photo: null },
-  { id: 2, type: "Found",   category: "Item",    title: "iPhone 14 Pro",                    shortDesc: "Found an...",  location: "Gym entrance",            reportedBy: "Sara Mohamed",  unit: "B-205", status: "Matched",  date: "Feb 10, 2026", contact: "+20 100 234 5678", fullDesc: "Found an iPhone 14 Pro at the gym entrance. Screen intact, phone is locked.", photo: null },
-  { id: 3, type: "Missing", category: "Item",    title: "Brown Leather Wallet",             shortDesc: "Brown",        location: "Parking lot B",           reportedBy: "Mohamed Ali",   unit: "C-304", status: "Resolved", date: "Feb 9, 2026",  contact: "+20 100 345 6789", fullDesc: "Brown leather wallet lost in parking lot B. Contains ID and credit cards.", photo: null },
-  { id: 4, type: "Found",   category: "Pet",     title: "Small White Cat",                  shortDesc: "Found a",      location: "Building C garden",       reportedBy: "Layla Ibrahim", unit: "A-102", status: "Open",     date: "Feb 12, 2026", contact: "+20 100 456 7890", fullDesc: "Found a small white Persian cat with blue eyes near Building C. Very friendly, wearing a pink collar.", photo: "https://upload.wikimedia.org/wikipedia/commons/thumb/4/4d/Cat_November_2010-1a.jpg/320px-Cat_November_2010-1a.jpg" },
-  { id: 5, type: "Missing", category: "Person",  title: "Elderly Man - Mr. Hassan Ibrahim", shortDesc: "Elderly",      location: "Community center",        reportedBy: "Omar Khalil",   unit: "B-301", status: "Open",     date: "Feb 11, 2026", contact: "+20 100 567 8901", fullDesc: "Elderly man, 75 years old, missing near community center. Last seen wearing a white thobe.", photo: null },
-  { id: 6, type: "Found",   category: "Item",    title: "Gold Bracelet",                    shortDesc: "Found a",      location: "Children's playground",   reportedBy: "Ahmed Hassan",  unit: "A-101", status: "Open",     date: "Feb 12, 2026", contact: "+20 100 678 9012", fullDesc: "Found a gold bracelet at the children's playground near the swings.", photo: null },
-  { id: 7, type: "Missing", category: "Vehicle", title: "Red Bicycle",                      shortDesc: "Red",          location: "Parking area A",          reportedBy: "Sara Mohamed",  unit: "B-205", status: "Closed",   date: "Feb 8, 2026",  contact: "+20 100 789 0123", fullDesc: "Red bicycle missing from parking area A. Has a black basket and white stripes.", photo: null },
-];
+const formatShortDate = (value?: string | null) => {
+  if (!value) return "";
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return "";
+  return parsed.toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+};
+
+const mapReportType = (raw?: string | null): ReportType => {
+  const normalized = (raw || "").toUpperCase();
+  return normalized.includes("FOUND") ? "Found" : "Missing";
+};
+
+const mapReportStatus = (raw?: string | null): ReportStatus => {
+  const normalized = (raw || "").toUpperCase();
+  switch (normalized) {
+    case "OPEN":
+      return "Open";
+    case "MATCHED":
+      return "Matched";
+    case "RESOLVED":
+      return "Resolved";
+    default:
+      return "Closed";
+  }
+};
+
+const mapReportCategory = (raw?: string | null): ReportCategory => {
+  const normalized = (raw || "").toUpperCase();
+  if (normalized.includes("PET")) return "Pet";
+  if (
+    normalized.includes("VEHICLE") ||
+    normalized.includes("CAR") ||
+    normalized.includes("BIKE") ||
+    normalized.includes("SCOOTER")
+  )
+    return "Vehicle";
+  if (
+    normalized.includes("PERSON") ||
+    normalized.includes("CHILD") ||
+    normalized.includes("ADULT")
+  )
+    return "Person";
+  if (normalized.includes("OTHER")) return "Other";
+  return "Item";
+};
+
+const toApiType = (type: ReportType) =>
+  type === "Found" ? "FOUND" : "MISSING";
+const toApiCategory = (category: ReportCategory) => {
+  switch (category) {
+    case "Pet":
+      return "PET";
+    case "Person":
+      return "PERSON";
+    case "Vehicle":
+      return "VEHICLE";
+    case "Other":
+      return "OTHER";
+    case "Item":
+    default:
+      return "ITEM";
+  }
+};
+
+const buildShortDesc = (description?: string | null) => {
+  if (!description) return "";
+  return description.trim().slice(0, 40);
+};
+
+const mapReportItem = (
+  raw: MissingFoundReportItemDto,
+  index: number,
+): Report => {
+  const description = raw.detailedDescription || raw.description || "";
+  const reportedBy =
+    raw.reportedByName || raw.reporterName || "Unknown resident";
+  const unit = raw.reportedByUnit || raw.reporterUnitLabel || "";
+  const statusLabel = raw.statusLabel || raw.status;
+  const typeLabel = raw.reportTypeLabel || raw.reportType;
+  const categoryLabel = raw.categoryLabel || raw.category;
+  const dateValue = raw.createdAt || raw.eventTime || "";
+
+  return {
+    id: raw.id ?? `report-${index}`,
+    type: mapReportType(typeLabel),
+    category: mapReportCategory(categoryLabel),
+    title: raw.title ?? "Untitled Report",
+    shortDesc: buildShortDesc(description),
+    location: raw.lastSeenLocation || raw.location || "",
+    reportedBy,
+    unit,
+    status: mapReportStatus(statusLabel),
+    date: formatShortDate(dateValue),
+    contact: raw.contactNumber || "",
+    fullDesc: description,
+    photo: null,
+  };
+};
+
+const mapReportDetails = (
+  details: MissingFoundReportDetailsDto,
+  base?: Report,
+): Report => {
+  const description =
+    details.detailedDescription || details.description || base?.fullDesc || "";
+  const reportType = details.reportTypeLabel || details.reportType;
+  const category = details.categoryLabel || details.category;
+  const status = details.statusLabel || details.status;
+  const reportedBy =
+    details.reportedByName ||
+    details.reporterName ||
+    base?.reportedBy ||
+    "Unknown resident";
+  const unit =
+    details.reportedByUnit || details.reporterUnitLabel || base?.unit || "";
+  const dateValue = details.reportDate || details.eventTime || base?.date || "";
+  const photoUrls =
+    details.photoUrls || details.photos || base?.photoUrls || [];
+
+  return {
+    id: details.id || base?.id || "",
+    type: mapReportType(reportType),
+    category: mapReportCategory(category),
+    title: details.title || base?.title || "Untitled Report",
+    shortDesc: buildShortDesc(description),
+    location:
+      details.lastSeenLocation || details.location || base?.location || "",
+    reportedBy,
+    unit,
+    status: mapReportStatus(status),
+    date: formatShortDate(dateValue),
+    contact: details.contactNumber || base?.contact || "",
+    fullDesc: description,
+    photo: photoUrls[0] ?? base?.photo ?? null,
+    photoUrls,
+  };
+};
 
 export default function MissingFound() {
-  const [reports, setReports]               = useState<Report[]>(INITIAL_REPORTS);
-  const [search, setSearch]                 = useState("");
-  const [typeFilter, setTypeFilter]         = useState<ReportType | "All">("All");
-  const [statusFilter, setStatusFilter]     = useState<ReportStatus | "All">("All");
-
-  // Modals
-  const [viewReport, setViewReport]         = useState<Report | null>(null);
-  const [editReport, setEditReport]         = useState<Report | null>(null);
-  const [deleteReport, setDeleteReport]     = useState<Report | null>(null);
-  const [showCreate, setShowCreate]         = useState(false);
-
-  const filtered = reports.filter((r) => {
-    const q = search.toLowerCase();
-    return (
-      (!search || r.title.toLowerCase().includes(q) || r.reportedBy.toLowerCase().includes(q) || r.shortDesc.toLowerCase().includes(q)) &&
-      (typeFilter   === "All" || r.type   === typeFilter) &&
-      (statusFilter === "All" || r.status === statusFilter)
-    );
+  const [reports, setReports] = useState<Report[]>([]);
+  const [stats, setStats] = useState({
+    missing: 0,
+    found: 0,
+    open: 0,
+    resolved: 0,
   });
+  const [categoryOptions, setCategoryOptions] = useState<string[]>([]);
+  const [residentOptions, setResidentOptions] = useState<
+    Array<{ value: string; label: string }>
+  >([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isActionLoading, setIsActionLoading] = useState(false);
+  const [viewReport, setViewReport] = useState<Report | null>(null);
+  const [editReport, setEditReport] = useState<Report | null>(null);
+  const [deleteReport, setDeleteReport] = useState<Report | null>(null);
+  const [showCreate, setShowCreate] = useState(false);
 
-  const stats = {
-    missing:  reports.filter((r) => r.type   === "Missing").length,
-    found:    reports.filter((r) => r.type   === "Found").length,
-    open:     reports.filter((r) => r.status === "Open").length,
-    resolved: reports.filter((r) => r.status === "Resolved").length,
+  const resolvedCategoryOptions = categoryOptions.length
+    ? Array.from(new Set(categoryOptions.map(mapReportCategory)))
+    : ["Item", "Pet", "Person", "Vehicle", "Other"];
+
+  const fetchReports = async () => {
+    try {
+      const res = await missingFoundApi.listReports({ page: 0, size: 100 });
+      const items = res.data.reports || [];
+      setReports(items.map(mapReportItem));
+      setStats({
+        missing: res.data.missingCount ?? 0,
+        found: res.data.foundCount ?? 0,
+        open: res.data.openCount ?? 0,
+        resolved: res.data.resolvedCount ?? 0,
+      });
+    } catch (err) {
+      console.error("Failed to fetch missing & found reports", err);
+      setReports([]);
+      setStats({ missing: 0, found: 0, open: 0, resolved: 0 });
+    }
   };
 
-  // CRUD handlers
-  const handleCreate = (newReport: Omit<Report, "id">) => {
-    const id = Math.max(...reports.map((r) => r.id)) + 1;
-    setReports((prev) => [{ ...newReport, id }, ...prev]);
+  const fetchOptions = async () => {
+    try {
+      const [categoriesRes, residentsRes] = await Promise.all([
+        missingFoundApi.listCategories(),
+        missingFoundApi.listResidentOptions({ page: 0, size: 100 }),
+      ]);
+      setCategoryOptions(categoriesRes.data || []);
+      const residentItems = residentsRes.data.residents || [];
+      setResidentOptions(
+        residentItems.map((resident) => ({
+          value: resident.residentId,
+          label: resident.displayLabel || resident.fullName || "Resident",
+        })),
+      );
+    } catch (err) {
+      console.error("Failed to load missing & found options", err);
+      setCategoryOptions([]);
+      setResidentOptions([]);
+    }
   };
 
-  const handleDelete = () => {
+  const handleCreate = async (data: ReportFormData) => {
+    if (!data.residentId) return;
+    try {
+      setIsSubmitting(true);
+      await missingFoundApi.createReport({
+        reporterId: data.residentId,
+        type: toApiType(data.type),
+        category: toApiCategory(data.category),
+        title: data.title,
+        description: data.fullDesc,
+        location: data.location,
+        contactNumber: data.contact,
+        photoUrls: data.photo ? [data.photo] : undefined,
+      });
+      await fetchReports();
+    } catch (err) {
+      console.error("Failed to create missing & found report", err);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleUpdate = async (data: ReportFormData) => {
+    if (!editReport) return;
+    try {
+      setIsSubmitting(true);
+      await missingFoundApi.updateReport(editReport.id, {
+        type: toApiType(data.type),
+        category: toApiCategory(data.category),
+        title: data.title,
+        description: data.fullDesc,
+        location: data.location,
+        contactNumber: data.contact,
+        photoUrls: data.photo ? [data.photo] : undefined,
+      });
+      await fetchReports();
+    } catch (err) {
+      console.error("Failed to update missing & found report", err);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleDelete = async () => {
     if (!deleteReport) return;
-    setReports((prev) => prev.filter((r) => r.id !== deleteReport.id));
-    setDeleteReport(null);
+    try {
+      setIsActionLoading(true);
+      await missingFoundApi.deleteReport(deleteReport.id);
+      await fetchReports();
+    } catch (err) {
+      console.error("Failed to delete missing & found report", err);
+    } finally {
+      setIsActionLoading(false);
+      setDeleteReport(null);
+    }
   };
+
+  const openReportDetails = async (report: Report) => {
+    setViewReport(report);
+    try {
+      setIsActionLoading(true);
+      const res = await missingFoundApi.getReportDetails(report.id);
+      setViewReport((prev) => mapReportDetails(res.data, prev || report));
+    } catch (err) {
+      console.error("Failed to load missing & found report details", err);
+    } finally {
+      setIsActionLoading(false);
+    }
+  };
+
+  const handleNotifyUser = async (report: Report) => {
+    try {
+      setIsActionLoading(true);
+      await missingFoundApi.notifyUser(report.id);
+    } catch (err) {
+      console.error("Failed to notify resident", err);
+    } finally {
+      setIsActionLoading(false);
+    }
+  };
+
+  const handleMarkMatched = async (report: Report) => {
+    try {
+      setIsActionLoading(true);
+      await missingFoundApi.markMatched(report.id);
+      await fetchReports();
+      setViewReport((prev) => (prev ? { ...prev, status: "Matched" } : prev));
+    } catch (err) {
+      console.error("Failed to mark report as matched", err);
+    } finally {
+      setIsActionLoading(false);
+    }
+  };
+
+  const handleMarkResolved = async (report: Report) => {
+    try {
+      setIsActionLoading(true);
+      await missingFoundApi.markResolved(report.id);
+      await fetchReports();
+      setViewReport((prev) => (prev ? { ...prev, status: "Resolved" } : prev));
+    } catch (err) {
+      console.error("Failed to mark report as resolved", err);
+    } finally {
+      setIsActionLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchReports();
+    fetchOptions();
+  }, []);
 
   return (
-    <div style={{ fontFamily: "'Inter', -apple-system, sans-serif", background: "#fff", minHeight: "100vh" }}>
-
+    <div
+      style={{
+        fontFamily: "'Inter', -apple-system, sans-serif",
+        background: "#fff",
+        minHeight: "100vh",
+      }}
+    >
       {/* ── Page Header ── */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", padding: "24px 20px 16px" }}>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "flex-start",
+          padding: "24px 20px 16px",
+        }}
+      >
         <div>
-          <h1 style={{ margin: 0, fontSize: 20, fontWeight: 700, color: "#111827" }}>Missing &amp; Found</h1>
-          <p style={{ margin: "3px 0 0", fontSize: 13, color: "#9ca3af" }}>Help residents recover lost items</p>
+          <h1
+            style={{
+              margin: 0,
+              fontSize: 20,
+              fontWeight: 700,
+              color: "#111827",
+            }}
+          >
+            Missing &amp; Found
+          </h1>
+          <p style={{ margin: "3px 0 0", fontSize: 13, color: "#9ca3af" }}>
+            Help residents recover lost items
+          </p>
         </div>
 
         <button
           onClick={() => setShowCreate(true)}
           style={{
-            display: "flex", alignItems: "center", gap: 6,
-            background: "#10b981", color: "#fff", border: "none",
-            borderRadius: 12, padding: "10px 18px",
-            fontWeight: 700, fontSize: 14, cursor: "pointer",
+            display: "flex",
+            alignItems: "center",
+            gap: 6,
+            background: "#10b981",
+            color: "#fff",
+            border: "none",
+            borderRadius: 12,
+            padding: "10px 18px",
+            fontWeight: 700,
+            fontSize: 14,
+            cursor: "pointer",
             boxShadow: "0 2px 10px rgba(16,185,129,0.4)",
             whiteSpace: "nowrap",
           }}
         >
-          <span style={{ fontSize: 20, lineHeight: 1, marginBottom: 1 }}>+</span>
+          <span style={{ fontSize: 20, lineHeight: 1, marginBottom: 1 }}>
+            +
+          </span>
           Create Report
         </button>
       </div>
 
       {/* ── Stat Cards ── */}
       <div className="grid grid-cols-4 gap-4 p-5">
-  <StatCard
-    icon={CircleAlert}
-    value={stats.missing}
-    label="Missing Items"
-    iconBg="bg-red-100"
-    borderColor="border-red-200"
-    iconColor="text-red-500"
-    valueColor="text-red-500"
-    gradient="bg-gradient-to-br from-red-50 to-transparent"
-  />
-  <StatCard
-    icon={Package}
-    value={stats.found}
-    label="Found Items"
-    iconBg="bg-green-100"
-    borderColor="border-green-200"
-    iconColor="text-green-500"
-    valueColor="text-green-500"
-    gradient="bg-gradient-to-br from-green-50 to-transparent"
-  />
-  <StatCard
-    icon={Clock4}
-    value={stats.open}
-    label="Open Cases"
-    iconBg="bg-blue-100"
-    borderColor="border-blue-200"
-    iconColor="text-blue-500"
-    valueColor="text-blue-500"
-    gradient="bg-gradient-to-br from-blue-50 to-transparent"
-  />
-  <StatCard
-    icon={CircleCheckBig}
-    value={stats.resolved}
-    label="Resolved"
-    iconBg="bg-purple-100"
-    borderColor="border-purple-200"
-    iconColor="text-purple-500"
-    valueColor="text-purple-500"
-    gradient="bg-gradient-to-br from-purple-50 to-transparent"
-  />
-</div>
+        <StatCard
+          icon={CircleAlert}
+          value={stats.missing}
+          label="Missing Items"
+          iconBg="bg-red-100"
+          borderColor="border-red-200"
+          iconColor="text-red-500"
+          valueColor="text-red-500"
+          gradient="bg-gradient-to-br from-red-50 to-transparent"
+        />
+        <StatCard
+          icon={Package}
+          value={stats.found}
+          label="Found Items"
+          iconBg="bg-green-100"
+          borderColor="border-green-200"
+          iconColor="text-green-500"
+          valueColor="text-green-500"
+          gradient="bg-gradient-to-br from-green-50 to-transparent"
+        />
+        <StatCard
+          icon={Clock4}
+          value={stats.open}
+          label="Open Cases"
+          iconBg="bg-blue-100"
+          borderColor="border-blue-200"
+          iconColor="text-blue-500"
+          valueColor="text-blue-500"
+          gradient="bg-gradient-to-br from-blue-50 to-transparent"
+        />
+        <StatCard
+          icon={CircleCheckBig}
+          value={stats.resolved}
+          label="Resolved"
+          iconBg="bg-purple-100"
+          borderColor="border-purple-200"
+          iconColor="text-purple-500"
+          valueColor="text-purple-500"
+          gradient="bg-gradient-to-br from-purple-50 to-transparent"
+        />
+      </div>
 
       {/* ── Table ── */}
       <div style={{ margin: "0 20px 20px" }}>
         <ReportTable
-          reports={filtered}
-          totalCount={reports.length}
-          search={search}
-          typeFilter={typeFilter}
-          statusFilter={statusFilter}
-          onSearchChange={setSearch}
-          onTypeFilterChange={setTypeFilter}
-          onStatusFilterChange={setStatusFilter}
-          onClearFilters={() => { setSearch(""); setTypeFilter("All"); setStatusFilter("All"); }}
-          onViewReport={setViewReport}
+          reports={reports}
+          onViewReport={openReportDetails}
           onEditReport={setEditReport}
           onDeleteReport={setDeleteReport}
         />
@@ -151,6 +447,9 @@ export default function MissingFound() {
         <CreateReportModal
           onClose={() => setShowCreate(false)}
           onSubmit={handleCreate}
+          categoryOptions={resolvedCategoryOptions}
+          residentOptions={residentOptions}
+          isSubmitting={isSubmitting}
         />
       )}
 
@@ -158,18 +457,33 @@ export default function MissingFound() {
         <ReportModal
           report={viewReport}
           onClose={() => setViewReport(null)}
+          onEdit={(report) => {
+            setViewReport(null);
+            setEditReport(report);
+          }}
+          onMarkResolved={handleMarkResolved}
+          onMarkMatched={handleMarkMatched}
+          onNotifyUser={handleNotifyUser}
+          isActionLoading={isActionLoading}
         />
       )}
 
       {editReport && (
         <CreateReportModal
           onClose={() => setEditReport(null)}
-          onSubmit={(updated) => {
-            setReports((prev) =>
-              prev.map((r) => r.id === editReport.id ? { ...updated, id: editReport.id } : r)
-            );
-            setEditReport(null);
+          mode="edit"
+          initialValues={{
+            type: editReport.type,
+            category: editReport.category,
+            title: editReport.title,
+            location: editReport.location,
+            contact: editReport.contact,
+            fullDesc: editReport.fullDesc,
+            photo: editReport.photo,
           }}
+          onSubmit={handleUpdate}
+          categoryOptions={resolvedCategoryOptions}
+          isSubmitting={isSubmitting}
         />
       )}
 
