@@ -1,12 +1,12 @@
-export type Priority = "HIGH" | "MEDIUM" | "LOW";
+export type Priority = "HIGH" | "NORMAL" | "LOW";
 export type Status = "Sent" | "Draft" | "Scheduled";
 export type Tab = "push" | "news" | "system";
 export type SubTab = "instant" | "scheduled";
 export type AnnouncementStatus = "Live" | "Inactive";
 export type NotifCategory = "Payment" | "Maintenance" | "Event" | "Security";
 
-export interface PushNotification   {
-  id: number;
+export interface PushNotification {
+  id: string;
   title: string;
   status: Status;
   priority: Priority;
@@ -20,7 +20,7 @@ export interface PushNotification   {
 }
 
 export interface Announcement {
-  id: number;
+  id: string;
   title: string;
   description: string;
   status: AnnouncementStatus;
@@ -28,6 +28,8 @@ export interface Announcement {
   date: string;
   image?: string;
   bgColor?: string;
+  priority?: "LOW" | "NORMAL" | "HIGH";
+  expiresAt?: string | null;
 }
 
 export interface SystemNotif {
