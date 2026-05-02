@@ -5,8 +5,7 @@ import type { Tab } from "../../types";
 import { useAuth } from "@/hooks/useAuth";
 import { createAnnouncement } from "@/lib/announcementService";
 import { sendNotification, type NotificationType } from "@/lib/notificationService";
-import { createAlert, type AlertType, type AlertCategory } from "@/lib/alertService";
-
+import { createAlert, type AlertType } from "@/lib/alertService";
 const labelStyle: React.CSSProperties = {
   display: "block", fontSize: 13, fontWeight: 600, color: "#374151", marginBottom: 8,
 };
@@ -83,7 +82,7 @@ function NewsForm({ onClose, onCreated }: { onClose: () => void; onCreated?: () 
         authorId:  user.userId,
         title:     title.trim(),
         content:   finalContent,
-        priority:  "NORMAL",
+        priority: "MEDIUM",
         expiresAt: expiry,
       });
       onCreated?.(); onClose();

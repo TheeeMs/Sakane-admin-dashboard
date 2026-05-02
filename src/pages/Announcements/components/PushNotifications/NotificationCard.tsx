@@ -116,7 +116,7 @@ interface Props {
   onDelete: (id: string) => void;
 }
 
-export function NotificationCard({ notif, onMarkRead, onDelete }: Props) {
+export function NotificationCard({ notif, onDelete }: Props) {
   const [hovered,     setHovered]     = useState(false);
   const [showDetails, setShowDetails] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
@@ -213,7 +213,7 @@ export function NotificationCard({ notif, onMarkRead, onDelete }: Props) {
               👁
             </button>
 
-            {notif.status === "Draft" && (
+            {notif.status === "PENDING" && (
               <button
                 title="Edit"
                 style={{ width: 34, height: 34, border: "1px solid #e5e7eb", borderRadius: 8, background: "#fff", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: "#9ca3af", transition: "all 0.15s", fontSize: 15 }}
