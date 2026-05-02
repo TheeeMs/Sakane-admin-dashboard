@@ -93,9 +93,11 @@ export function FeedbackCard({
                     <p className="font-semibold text-blue-900">
                       {feedback.adminResponse.respondedBy}
                     </p>
-                    <span className="text-sm text-blue-600">
-                      {formatDate(feedback.adminResponse.respondedAt)}
-                    </span>
+                    {feedback.adminResponse.respondedAt && (
+                      <span className="text-sm text-blue-600">
+                        {formatDate(feedback.adminResponse.respondedAt)}
+                      </span>
+                    )}
                   </div>
                   <p className="text-blue-800 leading-relaxed">
                     {feedback.adminResponse.message}
