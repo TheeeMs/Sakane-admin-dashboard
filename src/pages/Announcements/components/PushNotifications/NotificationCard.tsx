@@ -1,7 +1,6 @@
-import { useState } from "react";
+import { Clock, Eye, Trash2, Users, Calendar as CalendarIcon } from "lucide-react";
 import type { PushNotification } from "../../types";
 import { PriorityBadge, StatusBadge } from "../shared/Badges";
-import { ActionBtn } from "../shared/ActionButtons";
 
 export function NotificationCard({
   notif,
@@ -12,93 +11,72 @@ export function NotificationCard({
   onDelete: (id: string) => void;
   onView?: (notif: PushNotification) => void;
 }) {
-  const [hovered, setHovered] = useState(false);
   return (
-    <div
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
-      style={{
-        background: hovered ? "#fafffe" : "#fff",
-        border: "1px solid",
-        borderColor: hovered ? "#2dd4bf33" : "#e5e7eb",
-        borderRadius: 12,
-        padding: "18px 20px",
-        transition: "all 0.18s",
-        boxShadow: hovered ? "0 4px 16px rgba(13,148,136,0.08)" : "none",
-      }}
-    >
-      <div
-        style={{
-          display: "flex",
-          alignItems: "flex-start",
-          justifyContent: "space-between",
-        }}
-      >
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 8,
-              flexWrap: "wrap",
-              marginBottom: 8,
-            }}
-          >
-            <span style={{ fontWeight: 700, fontSize: 15, color: "#111827" }}>
-              {notif.title}
-            </span>
+    <div className="group bg-white border border-gray-100 rounded-xl p-5 transition-all hover:border-[#00A389]/30 hover:shadow-md hover:shadow-[#00A389]/5">
+      <div className="flex items-start justify-between gap-4">
+        <div className="flex-1 min-w-0">
+          {/* Title + badges */}
+          <div className="flex items-center gap-2 flex-wrap mb-2">
+            <h3 className="font-bold text-gray-900 text-[15px]">{notif.title}</h3>
             <StatusBadge status={notif.status} />
             <PriorityBadge priority={notif.priority} />
           </div>
-          <p
-            style={{
-              color: "#6b7280",
-              fontSize: 13.5,
-              margin: "0 0 10px",
-              lineHeight: 1.55,
-            }}
-          >
+
+          {/* Description */}
+          <p className="text-gray-600 text-sm leading-relaxed mb-3 line-clamp-2">
             {notif.description}
           </p>
-          <div
-            style={{
-              display: "flex",
-              gap: 16,
-              flexWrap: "wrap",
-              fontSize: 12,
-              color: "#9ca3af",
-            }}
-          >
+
+          {/* Meta */}
+          <div className="flex flex-wrap gap-x-4 gap-y-1.5 text-xs text-gray-500">
             {notif.recipients !== undefined && (
-              <span>👥 {notif.recipients} recipients</span>
-            )}
-            {notif.readPercent !== undefined && (
-              <span>
-                👁 {notif.readCount} read ({notif.readPercent}%)
+              <span className="inline-flex items-center gap-1">
+                <Users className="w-3.5 h-3.5" />
+                {notif.recipients} recipients
               </span>
             )}
-            {notif.sentAt && <span>🕐 {notif.sentAt}</span>}
-            {notif.scheduledAt && <span>📅 {notif.scheduledAt}</span>}
-            {notif.sentBy && <span>By {notif.sentBy}</span>}
+            {notif.readPercent !== undefined && (
+              <span className="inline-flex items-center gap-1">
+                <Eye className="w-3.5 h-3.5" />
+                {notif.readCount} read ({notif.readPercent}%)
+              </span>
+            )}
+            {notif.sentAt && (
+              <span className="inline-flex items-center gap-1">
+                <Clock className="w-3.5 h-3.5" />
+                {notif.sentAt}
+              </span>
+            )}
+            {notif.scheduledAt && (
+              <span className="inline-flex items-center gap-1">
+                <CalendarIcon className="w-3.5 h-3.5" />
+                {notif.scheduledAt}
+              </span>
+            )}
+            {notif.sentBy && (
+              <span className="text-gray-400">By {notif.sentBy}</span>
+            )}
           </div>
         </div>
-        <div style={{ display: "flex", gap: 8, marginLeft: 16 }}>
+
+        {/* Actions */}
+        <div className="flex gap-1 flex-shrink-0">
           {onView && (
-            <ActionBtn
-              icon="👁"
-              title="View"
-              color="#6b7280"
-              hoverColor="#0d9488"
+            <button
               onClick={() => onView(notif)}
-            />
+              title="View details"
+              className="w-9 h-9 rounded-lg text-gray-500 hover:bg-[#00A389]/10 hover:text-[#00A389] flex items-center justify-center transition"
+            >
+              <Eye className="w-4 h-4" />
+            </button>
           )}
-          <ActionBtn
-            icon="🗑"
-            title="Delete"
-            color="#6b7280"
-            hoverColor="#dc2626"
+          <button
             onClick={() => onDelete(notif.id)}
-          />
+            title="Delete"
+            className="w-9 h-9 rounded-lg text-gray-500 hover:bg-red-50 hover:text-red-600 flex items-center justify-center transition"
+          >
+            <Trash2 className="w-4 h-4" />
+          </button>
         </div>
       </div>
     </div>

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Calendar, Inbox, Search, Zap } from "lucide-react";
 import type { PushNotification, SubTab } from "../../types";
 import { NotificationCard } from "./NotificationCard";
 
@@ -27,22 +28,24 @@ export function PushNotifications({
     statusValue === "SCHEDULED" ? "scheduled" : "instant",
   );
 
-  const currentList = items;
-  const filtered = currentList.filter(
+  const filtered = items.filter(
     (n) =>
       n.title.toLowerCase().includes(search.toLowerCase()) ||
       n.description.toLowerCase().includes(search.toLowerCase()),
   );
 
+  const scheduledOption = statusOptions.find(
+    (option) => option.value === "SCHEDULED",
+  );
+  const scheduledCount = scheduledOption?.count ?? 0;
+
   return (
     <div>
-      <div style={{ display: "flex", gap: 8, marginBottom: 18 }}>
+      {/* Sub-tabs */}
+      <div className="flex gap-2 mb-5 flex-wrap">
         {(["instant", "scheduled"] as SubTab[]).map((s) => {
           const active = activeSubTab === s;
-          const scheduledOption = statusOptions.find(
-            (option) => option.value === "SCHEDULED",
-          );
-          const scheduledCount = scheduledOption?.count ?? 0;
+          const Icon = s === "instant" ? Zap : Calendar;
           return (
             <button
               key={s}
@@ -50,37 +53,36 @@ export function PushNotifications({
                 setActiveSubTab(s);
                 onStatusChange(s === "instant" ? "INSTANT_SENT" : "SCHEDULED");
               }}
-              style={{
-                padding: "8px 18px",
-                borderRadius: 8,
-                border: "1px solid",
-                borderColor: active ? "#0d9488" : "#e5e7eb",
-                background: active ? "#0d9488" : "#fff",
-                color: active ? "#fff" : "#374151",
-                fontWeight: 600,
-                fontSize: 13,
-                cursor: "pointer",
-              }}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
+                active
+                  ? "bg-[#00A389] text-white shadow-sm shadow-[#00A389]/25"
+                  : "bg-white text-gray-700 border border-gray-200 hover:bg-gray-50"
+              }`}
             >
-              {s === "instant"
-                ? "⚡ Instant & Sent"
-                : `📅 Scheduled (${scheduledCount})`}
+              <Icon className="w-4 h-4" />
+              {s === "instant" ? "Instant & Sent" : `Scheduled (${scheduledCount})`}
             </button>
           );
         })}
       </div>
-      <div style={{ display: "flex", gap: 10, marginBottom: 12 }}>
+
+      {/* Filters row */}
+      <div className="flex flex-col md:flex-row gap-3 mb-5">
+        {/* Search */}
+        <div className="relative flex-1">
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+          <input
+            value={search}
+            onChange={(e) => onSearchChange(e.target.value)}
+            placeholder="Search notifications..."
+            className="w-full bg-gray-50 border border-gray-200 rounded-xl pl-10 pr-3 py-2.5 text-sm text-gray-800 outline-none focus:border-[#00A389] focus:ring-2 focus:ring-[#00A389]/15 transition-all"
+          />
+        </div>
+        {/* Status select */}
         <select
           value={statusValue}
           onChange={(e) => onStatusChange(e.target.value)}
-          style={{
-            flex: 1,
-            padding: "9px 12px",
-            border: "1px solid #e5e7eb",
-            borderRadius: 10,
-            fontSize: 13,
-            background: "#fafafa",
-          }}
+          className="md:w-56 bg-gray-50 border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm text-gray-800 outline-none focus:border-[#00A389] focus:ring-2 focus:ring-[#00A389]/15 transition-all"
         >
           {statusOptions.map((option) => (
             <option key={option.value} value={option.value}>
@@ -90,55 +92,32 @@ export function PushNotifications({
           ))}
         </select>
       </div>
-      <div style={{ position: "relative", marginBottom: 18 }}>
-        <span
-          style={{
-            position: "absolute",
-            left: 14,
-            top: "50%",
-            transform: "translateY(-50%)",
-            color: "#9ca3af",
-            pointerEvents: "none",
-          }}
-        >
-          🔍
-        </span>
-        <input
-          value={search}
-          onChange={(e) => onSearchChange(e.target.value)}
-          placeholder="Search notifications..."
-          style={{
-            width: "100%",
-            boxSizing: "border-box",
-            padding: "11px 14px 11px 40px",
-            border: "1px solid #e5e7eb",
-            borderRadius: 10,
-            fontSize: 14,
-            background: "#fafafa",
-            outline: "none",
-          }}
-          onFocus={(e) => (e.currentTarget.style.borderColor = "#0d9488")}
-          onBlur={(e) => (e.currentTarget.style.borderColor = "#e5e7eb")}
-        />
-      </div>
-      <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-        {filtered.length === 0 ? (
-          <div
-            style={{ textAlign: "center", color: "#9ca3af", padding: "40px 0" }}
-          >
-            No notifications found.
+
+      {/* List */}
+      {filtered.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-16 text-center">
+          <div className="w-14 h-14 rounded-2xl bg-gray-50 border border-gray-100 flex items-center justify-center mb-3">
+            <Inbox className="w-6 h-6 text-gray-400" />
           </div>
-        ) : (
-          filtered.map((n) => (
+          <p className="text-sm font-medium text-gray-600">
+            No notifications found
+          </p>
+          <p className="text-xs text-gray-400 mt-1">
+            Try adjusting your search or filter
+          </p>
+        </div>
+      ) : (
+        <div className="flex flex-col gap-3">
+          {filtered.map((n) => (
             <NotificationCard
               key={n.id}
               notif={n}
               onDelete={onDelete}
               onView={onView}
             />
-          ))
-        )}
-      </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

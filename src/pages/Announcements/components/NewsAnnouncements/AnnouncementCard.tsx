@@ -1,6 +1,5 @@
-import { useState } from "react";
+import { Calendar, Edit3, Eye, Trash2 } from "lucide-react";
 import type { Announcement } from "../../types";
-import { EyeIcon, CalendarIcon, EditIcon, TrashIcon } from "../shared/Icons";
 
 type AnnouncementCardProps = {
   item: Announcement;
@@ -15,202 +14,89 @@ export function AnnouncementCard({
   onEdit,
   onView,
 }: AnnouncementCardProps) {
-  const [hovered, setHovered] = useState(false);
-  const [editH, setEditH] = useState(false);
-  const [eyeH, setEyeH] = useState(false);
-  const [delH, setDelH] = useState(false);
   const isLive = item.status === "Live";
   const hasImage = !!item.image;
   const hasColor = !!item.bgColor && !hasImage;
 
   return (
-    <div
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
-      style={{
-        background: "#fff",
-        border: "1px solid",
-        borderColor: hovered ? "#14b8a633" : "#e5e7eb",
-        borderRadius: 14,
-        overflow: "hidden",
-        transition: "all 0.2s",
-        boxShadow: hovered
-          ? "0 8px 24px rgba(13,148,136,0.1)"
-          : "0 1px 4px rgba(0,0,0,0.05)",
-        transform: hovered ? "translateY(-2px)" : "translateY(0)",
-        display: "flex",
-        flexDirection: "column",
-      }}
-    >
+    <div className="group bg-white border border-gray-100 rounded-2xl overflow-hidden flex flex-col transition-all hover:border-[#00A389]/30 hover:shadow-lg hover:shadow-[#00A389]/5 hover:-translate-y-0.5">
+      {/* Cover area */}
       <div
+        className="relative h-36 flex items-center justify-center"
         style={{
-          height: 140,
-          position: "relative",
           background: hasImage
             ? `url(${item.image}) center/cover no-repeat`
             : hasColor
-              ? item.bgColor!
-              : "#f3f4f6",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
+            ? item.bgColor!
+            : "linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%)",
         }}
       >
         {hasColor && (
           <span
-            style={{
-              color: "#fff",
-              fontWeight: 800,
-              fontSize: 18,
-              textAlign: "center",
-              padding: "0 20px",
-              textShadow: "0 1px 4px rgba(0,0,0,0.25)",
-            }}
+            className="text-white font-extrabold text-lg text-center px-5"
+            style={{ textShadow: "0 1px 4px rgba(0,0,0,0.25)" }}
           >
             {item.title}
           </span>
         )}
+        {/* Status pill */}
         <div
-          style={{
-            position: "absolute",
-            top: 10,
-            right: 10,
-            display: "flex",
-            alignItems: "center",
-            gap: 5,
-            padding: "3px 10px",
-            borderRadius: 999,
-            fontSize: 12,
-            fontWeight: 700,
-            background: isLive ? "#16a34a" : "#6b7280",
-            color: "#fff",
-          }}
+          className={`absolute top-2.5 right-2.5 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold text-white ${
+            isLive ? "bg-emerald-500" : "bg-gray-500"
+          }`}
         >
-          <span
-            style={{
-              width: 7,
-              height: 7,
-              borderRadius: "50%",
-              background: "#fff",
-              display: "inline-block",
-            }}
-          />
+          <span className="w-1.5 h-1.5 rounded-full bg-white inline-block" />
           {item.status}
         </div>
       </div>
-      <div
-        style={{
-          padding: "14px 16px 16px",
-          flex: 1,
-          display: "flex",
-          flexDirection: "column",
-        }}
-      >
+
+      {/* Body */}
+      <div className="p-4 flex-1 flex flex-col">
         {!hasColor && (
-          <h3
-            style={{
-              margin: "0 0 6px",
-              fontSize: 15,
-              fontWeight: 700,
-              color: "#111827",
-            }}
-          >
+          <h3 className="m-0 mb-1.5 text-[15px] font-bold text-gray-900 line-clamp-1">
             {item.title}
           </h3>
         )}
-        <p
-          style={{
-            margin: "0 0 12px",
-            fontSize: 13,
-            color: "#6b7280",
-            lineHeight: 1.5,
-            flex: 1,
-          }}
-        >
+        <p className="m-0 mb-3 text-[13px] text-gray-600 leading-relaxed flex-1 line-clamp-3">
           {item.description}
         </p>
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            fontSize: 12,
-            color: "#9ca3af",
-            marginBottom: 12,
-          }}
-        >
-          <span style={{ display: "flex", alignItems: "center", gap: 4 }}>
-            <EyeIcon /> {item.views.toLocaleString()}
+        {/* Meta */}
+        <div className="flex justify-between text-xs text-gray-400 mb-3">
+          <span className="inline-flex items-center gap-1">
+            <Eye className="w-3.5 h-3.5" />
+            {item.views.toLocaleString()}
           </span>
-          <span style={{ display: "flex", alignItems: "center", gap: 4 }}>
-            <CalendarIcon /> {item.date}
+          <span className="inline-flex items-center gap-1">
+            <Calendar className="w-3.5 h-3.5" />
+            {item.date}
           </span>
         </div>
-        <div style={{ display: "flex", gap: 8 }}>
+        {/* Actions */}
+        <div className="flex gap-2">
           {onEdit && (
             <button
               onClick={() => onEdit(item)}
-              onMouseEnter={() => setEditH(true)}
-              onMouseLeave={() => setEditH(false)}
-              style={{
-                flex: 1,
-                padding: "8px 0",
-                border: "1.5px solid #0d9488",
-                borderRadius: 8,
-                background: editH ? "#0d948815" : "transparent",
-                color: "#0d9488",
-                fontWeight: 600,
-                fontSize: 13,
-                cursor: "pointer",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: 6,
-              }}
+              className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg border border-[#00A389] text-[#00A389] text-[13px] font-semibold hover:bg-[#00A389]/10 transition"
             >
-              <EditIcon /> Edit
+              <Edit3 className="w-3.5 h-3.5" />
+              Edit
             </button>
           )}
           {onView && (
             <button
               onClick={() => onView(item)}
-              onMouseEnter={() => setEyeH(true)}
-              onMouseLeave={() => setEyeH(false)}
-              style={{
-                width: 36,
-                height: 36,
-                border: "1.5px solid",
-                borderColor: eyeH ? "#0d9488" : "#e5e7eb",
-                borderRadius: 8,
-                background: "transparent",
-                cursor: "pointer",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                color: eyeH ? "#0d9488" : "#6b7280",
-              }}
+              title="View"
+              className="w-9 h-9 flex items-center justify-center rounded-lg border border-gray-200 text-gray-500 hover:border-[#00A389] hover:text-[#00A389] transition"
             >
-              <EyeIcon />
+              <Eye className="w-4 h-4" />
             </button>
           )}
           <button
             onClick={() => onDelete(item.id)}
-            onMouseEnter={() => setDelH(true)}
-            onMouseLeave={() => setDelH(false)}
-            style={{
-              width: 36,
-              height: 36,
-              border: "1.5px solid",
-              borderColor: delH ? "#dc2626" : "#e5e7eb",
-              borderRadius: 8,
-              background: delH ? "#fef2f2" : "transparent",
-              cursor: "pointer",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              color: delH ? "#dc2626" : "#6b7280",
-            }}
+            title="Delete"
+            className="w-9 h-9 flex items-center justify-center rounded-lg border border-gray-200 text-gray-500 hover:border-red-500 hover:text-red-600 hover:bg-red-50 transition"
           >
-            <TrashIcon />
+            <Trash2 className="w-4 h-4" />
           </button>
         </div>
       </div>
