@@ -98,7 +98,7 @@ body {
   body {
     @apply bg-background text-foreground;
   }
-
+}
 
 /* ── Global animation keyframes ─────────────────────────── */
 @keyframes fadeSlideUp {
