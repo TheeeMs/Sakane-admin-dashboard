@@ -1,4 +1,4 @@
 export { ReceiptStatusOverview } from "./ReceiptStatusOverview";
-export { FinancialStatCard } from "./FinancialStatCard";
+export { FinancialStatCards } from "./FinancialStatCard";
 export { ReceiptsTable } from "./ReceiptsTable";
 export { GenerateReceiptModal } from "./GenerateReceiptModal";

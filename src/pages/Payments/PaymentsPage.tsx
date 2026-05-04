@@ -1,12 +1,15 @@
 import { useState } from "react";
-import { AlertTriangle, DollarSign } from "lucide-react";
 import {
   ReceiptStatusOverview,
-  FinancialStatCard,
+  FinancialStatCards,
   ReceiptsTable,
   GenerateReceiptModal,
 } from "./components";
-import { mockReceipts, mockStatistics, mockResidents } from "./data/receiptsData";
+import {
+  mockReceipts,
+  mockStatistics,
+  mockResidents,
+} from "./data/receiptsData";
 import type { GenerateReceiptFormData } from "./types";
 
 export function PaymentsPage() {
@@ -19,59 +22,30 @@ export function PaymentsPage() {
 
   const handleSubmitReceipt = (data: GenerateReceiptFormData) => {
     console.log("Generating receipt:", data);
-    // Handle API call here
   };
 
   return (
-    <div className="space-y-8">
-      {/* Header */}
+    <div className="space-y-5">
+      {/* Page header */}
       <div>
-        <h1 className="text-3xl font-bold text-gray-900">
-          Financial & Receipts Hub
-        </h1>
-        <p className="text-gray-600 mt-1">
+        <h1 className="text-xl font-bold text-gray-800">Financial & Receipts Hub</h1>
+        <p className="text-xs text-gray-400 mt-0.5">
           Manage payment receipts and track financial status
         </p>
       </div>
 
-      {/* Top Section: Overview and Stats */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Receipt Status Overview */}
-        <div className="lg:col-span-1">
-          <ReceiptStatusOverview statistics={mockStatistics} />
-        </div>
+      {/* Top 3-column cards row */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        {/* Left — Receipt Status Overview */}
+        <ReceiptStatusOverview statistics={mockStatistics} />
 
-        {/* Financial Stat Cards */}
-        <div className="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6">
-          <FinancialStatCard
-            label="Outstanding Debt"
-            value={`EGP ${mockStatistics.outstandingDebt.toLocaleString()}`}
-            icon={AlertTriangle}
-            statusText="Requires attention"
-            statusColor="text-red-600"
-            count={mockStatistics.totalOverdue}
-            countLabel="overdue payments"
-            iconBg="bg-red-100"
-            iconColor="text-red-600"
-            gradient="bg-gradient-to-br from-red-50 to-transparent"
-            borderColor="border-red-200"
-          />
-          <FinancialStatCard
-            label="Collected This Month"
-            subtitle="February 2024"
-            value={`EGP ${mockStatistics.collectedThisMonth.toLocaleString()}`}
-            icon={DollarSign}
-            count={mockStatistics.totalPaid}
-            countLabel="successful payments"
-            iconBg="bg-green-100"
-            iconColor="text-green-600"
-            gradient="bg-gradient-to-br from-green-50 to-transparent"
-            borderColor="border-green-200"
-          />
+        {/* Right 2 — Financial Stat Cards (outstanding + collected) */}
+        <div className="lg:col-span-2">
+          <FinancialStatCards statistics={mockStatistics} />
         </div>
       </div>
 
-      {/* Receipts Table */}
+      {/* Receipts table */}
       <ReceiptsTable
         receipts={mockReceipts}
         searchQuery={searchQuery}
