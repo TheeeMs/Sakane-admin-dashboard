@@ -1,41 +1,262 @@
 import { useState } from "react";
-import type { SystemNotif } from "../../types";
-import { categoryColors } from "../../data/systemData";
-import { EditIcon, BarChartIcon } from "../shared/Icons";
-import { SysActionBtn } from "../shared/ActionButtons";
+import {
+  Bell,
+  Settings,
+  Calendar as CalendarLucide,
+  Lock,
+  Edit3,
+  BarChart3,
+  Trash2,
+} from "lucide-react";
+import type { PushNotification, NotifCategory } from "../../types";
 import { Toggle } from "./Toggle";
 
-function StatCell({ label, value, valueColor }: { label: string; value: string; valueColor?: string }) {
-  return <div><p style={{ margin: 0, fontSize: 11, color: "#9ca3af", marginBottom: 2 }}>{label}</p><p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: valueColor || "#111827" }}>{value}</p></div>;
+/* ──────────────────────────────────────────────
+ *  Helpers — derive presentation values from API data
+ * ──────────────────────────────────────────── */
+const categoryStyles: Record<NotifCategory, { bg: string; text: string }> = {
+  Payment: { bg: "bg-violet-50", text: "text-violet-700" },
+  Maintenance: { bg: "bg-pink-50", text: "text-pink-700" },
+  Event: { bg: "bg-blue-50", text: "text-blue-700" },
+  Security: { bg: "bg-emerald-50", text: "text-emerald-700" },
+};
+
+const categoryIconBg: Record<NotifCategory, { bg: string; text: string }> = {
+  Payment: { bg: "bg-violet-50", text: "text-violet-600" },
+  Maintenance: { bg: "bg-pink-50", text: "text-pink-600" },
+  Event: { bg: "bg-blue-50", text: "text-blue-600" },
+  Security: { bg: "bg-emerald-50", text: "text-emerald-600" },
+};
+
+function deriveCategory(title: string): NotifCategory {
+  const lowered = title.toLowerCase();
+  if (
+    lowered.includes("maintenance") ||
+    lowered.includes("ticket") ||
+    lowered.includes("repair")
+  )
+    return "Maintenance";
+  if (
+    lowered.includes("event") ||
+    lowered.includes("meeting") ||
+    lowered.includes("registration")
+  )
+    return "Event";
+  if (
+    lowered.includes("guest") ||
+    lowered.includes("access") ||
+    lowered.includes("security") ||
+    lowered.includes("code")
+  )
+    return "Security";
+  return "Payment";
 }
 
-export function SystemNotifCard({ notif, onToggle }: { notif: SystemNotif; onToggle: () => void }) {
-  const [hovered, setHovered] = useState(false);
-  const catCfg = categoryColors[notif.category];
+function CategoryIcon({ category }: { category: NotifCategory }) {
+  const cls = "w-4 h-4";
+  switch (category) {
+    case "Maintenance":
+      return <Settings className={cls} />;
+    case "Event":
+      return <CalendarLucide className={cls} />;
+    case "Security":
+      return <Lock className={cls} />;
+    case "Payment":
+    default:
+      return <Bell className={cls} />;
+  }
+}
+
+function deriveTrigger(notif: PushNotification): string {
+  if (notif.scheduledAt) return notif.scheduledAt.replace(/^Scheduled\s+/i, "");
+  if (notif.status === "Draft") return "Draft — not yet triggered";
+  return "When event occurs";
+}
+
+function deriveLastSent(notif: PushNotification): string {
+  if (notif.sentAt) return notif.sentAt.replace(/^Sent\s+/i, "");
+  return "—";
+}
+
+function successRateColor(rate: number): string {
+  if (rate >= 98) return "text-emerald-600";
+  if (rate >= 95) return "text-amber-600";
+  return "text-red-600";
+}
+
+/* ──────────────────────────────────────────────
+ *  Stat cell
+ * ──────────────────────────────────────────── */
+function StatCell({
+  label,
+  value,
+  valueClassName,
+}: {
+  label: string;
+  value: string;
+  valueClassName?: string;
+}) {
   return (
-    <div onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)} style={{ background: hovered ? "#fafffe" : "#fff", border: "1px solid", borderColor: hovered ? "#14b8a633" : "#e5e7eb", borderRadius: 12, padding: "18px 20px", transition: "all 0.18s" }}>
-      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12 }}>
-        <div style={{ display: "flex", gap: 14, flex: 1, minWidth: 0 }}>
-          <div style={{ width: 40, height: 40, borderRadius: 10, background: notif.enabled ? "#f0fdf4" : "#f3f4f6", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, flexShrink: 0 }}>{notif.icon}</div>
-          <div style={{ flex: 1 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", marginBottom: 8 }}>
-              <span style={{ fontWeight: 700, fontSize: 15, color: "#111827" }}>{notif.title}</span>
-              <span style={{ display: "inline-flex", alignItems: "center", gap: 4, padding: "2px 9px", borderRadius: 999, fontSize: 11, fontWeight: 600, background: notif.enabled ? "#f0fdf4" : "#f3f4f6", color: notif.enabled ? "#16a34a" : "#6b7280", border: "1px solid currentColor" }}><span style={{ width: 6, height: 6, borderRadius: "50%", background: "currentColor", display: "inline-block" }} />{notif.enabled ? "Enabled" : "Disabled"}</span>
-              <span style={{ padding: "2px 9px", borderRadius: 999, fontSize: 11, fontWeight: 600, background: catCfg.bg, color: catCfg.text }}>{notif.category}</span>
+    <div>
+      <p className="m-0 text-[11px] font-medium text-gray-400 mb-0.5">
+        {label}
+      </p>
+      <p
+        className={`m-0 text-[13px] font-semibold text-gray-900 ${
+          valueClassName ?? ""
+        }`}
+      >
+        {value}
+      </p>
+    </div>
+  );
+}
+
+/* ──────────────────────────────────────────────
+ *  Card
+ * ──────────────────────────────────────────── */
+interface SystemNotifCardProps {
+  notif: PushNotification;
+  onToggle?: (notif: PushNotification, nextEnabled: boolean) => void;
+  onEdit?: (notif: PushNotification) => void;
+  onAnalytics?: (notif: PushNotification) => void;
+  onDelete?: (id: string) => void;
+}
+
+export function SystemNotifCard({
+  notif,
+  onToggle,
+  onEdit,
+  onAnalytics,
+  onDelete,
+}: SystemNotifCardProps) {
+  const enabled = notif.status === "Sent";
+  const category = deriveCategory(notif.title);
+  const catBadge = categoryStyles[category];
+  const catIcon = categoryIconBg[category];
+  const [hovered, setHovered] = useState(false);
+
+  const totalSent = notif.recipients ?? 0;
+  const successRate = notif.readPercent ?? 0;
+
+  return (
+    <div
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      className={`bg-white border rounded-xl px-5 py-4 transition-all ${
+        hovered
+          ? "border-[#00A389]/30 shadow-md shadow-[#00A389]/5"
+          : "border-gray-100"
+      }`}
+    >
+      <div className="flex items-start justify-between gap-3">
+        {/* Left: icon + content */}
+        <div className="flex gap-3.5 flex-1 min-w-0">
+          {/* Icon bubble */}
+          <div
+            className={`w-10 h-10 rounded-xl ${
+              enabled ? catIcon.bg : "bg-gray-100"
+            } ${
+              enabled ? catIcon.text : "text-gray-400"
+            } flex items-center justify-center flex-shrink-0`}
+          >
+            <CategoryIcon category={category} />
+          </div>
+
+          {/* Content */}
+          <div className="flex-1 min-w-0">
+            {/* Title row */}
+            <div className="flex items-center gap-2 flex-wrap mb-2">
+              <h3 className="m-0 font-bold text-gray-900 text-[15px]">
+                {notif.title}
+              </h3>
+              <span
+                className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold ${
+                  enabled
+                    ? "bg-emerald-50 text-emerald-600 border border-emerald-200"
+                    : "bg-gray-50 text-gray-500 border border-gray-200"
+                }`}
+              >
+                <span
+                  className={`w-1.5 h-1.5 rounded-full ${
+                    enabled ? "bg-emerald-500" : "bg-gray-400"
+                  }`}
+                />
+                {enabled ? "Enabled" : "Disabled"}
+              </span>
+              <span
+                className={`px-2 py-0.5 rounded-full text-[11px] font-semibold ${catBadge.bg} ${catBadge.text}`}
+              >
+                {category}
+              </span>
             </div>
-            <div style={{ background: "#f9fafb", border: "1px solid #e5e7eb", borderRadius: 8, padding: "8px 12px", fontSize: 12.5, color: "#374151", fontFamily: "monospace", lineHeight: 1.5, marginBottom: 12 }}>{notif.template}</div>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 8 }}>
-              <StatCell label="Trigger Condition" value={notif.triggerCondition} />
-              <StatCell label="Total Sent" value={notif.totalSent.toLocaleString()} />
-              <StatCell label="Success Rate" value={`${notif.successRate}%`} valueColor={notif.successRate >= 98 ? "#16a34a" : notif.successRate >= 95 ? "#d97706" : "#dc2626"} />
-              <StatCell label="Last Sent" value={notif.lastSent} />
+
+            {/* Template message */}
+            <div className="bg-gray-50 border border-gray-100 rounded-lg px-3 py-2 mb-3">
+              <p className="m-0 text-[12.5px] text-gray-700 font-mono leading-relaxed line-clamp-2">
+                {notif.description || "—"}
+              </p>
+            </div>
+
+            {/* Stats grid */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <StatCell
+                label="Trigger Condition"
+                value={deriveTrigger(notif)}
+              />
+              <StatCell
+                label="Total Sent"
+                value={totalSent.toLocaleString()}
+              />
+              <StatCell
+                label="Success Rate"
+                value={`${successRate}%`}
+                valueClassName={successRateColor(successRate)}
+              />
+              <StatCell label="Last Sent" value={deriveLastSent(notif)} />
             </div>
           </div>
         </div>
-        <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 10, flexShrink: 0 }}>
-          <Toggle enabled={notif.enabled} onChange={onToggle} />
-          <SysActionBtn icon={<EditIcon />} title="Edit" hoverColor="#0d9488" />
-          <SysActionBtn icon={<BarChartIcon />} title="Stats" hoverColor="#7c3aed" />
+
+        {/* Right: toggle + actions */}
+        <div className="flex flex-col items-end gap-2 flex-shrink-0">
+          <Toggle
+            enabled={enabled}
+            onChange={() => onToggle?.(notif, !enabled)}
+            disabled={!onToggle}
+          />
+          <div className="flex flex-col gap-1 mt-1">
+            {onEdit && (
+              <button
+                type="button"
+                onClick={() => onEdit(notif)}
+                title="Edit"
+                className="w-8 h-8 rounded-lg text-gray-400 hover:bg-[#00A389]/10 hover:text-[#00A389] flex items-center justify-center transition"
+              >
+                <Edit3 className="w-4 h-4" />
+              </button>
+            )}
+            {onAnalytics && (
+              <button
+                type="button"
+                onClick={() => onAnalytics(notif)}
+                title="Analytics"
+                className="w-8 h-8 rounded-lg text-gray-400 hover:bg-violet-50 hover:text-violet-600 flex items-center justify-center transition"
+              >
+                <BarChart3 className="w-4 h-4" />
+              </button>
+            )}
+            {onDelete && (
+              <button
+                type="button"
+                onClick={() => onDelete(notif.id)}
+                title="Delete"
+                className="w-8 h-8 rounded-lg text-gray-400 hover:bg-red-50 hover:text-red-600 flex items-center justify-center transition"
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
+            )}
+          </div>
         </div>
       </div>
     </div>
