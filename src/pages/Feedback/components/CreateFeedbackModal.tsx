@@ -16,10 +16,12 @@ interface CreateFeedbackModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSubmit: (data: FeedbackFormData) => void;
+  categories?: string[];
+  residentOptions?: Array<{ value: string; label: string }>;
 }
 
 export interface FeedbackFormData {
-  residentId: string;
+  residentId?: string;
   type: FeedbackType;
   title: string;
   category: FeedbackCategory;
@@ -28,27 +30,12 @@ export interface FeedbackFormData {
   isAnonymous: boolean;
 }
 
-// Mock residents data - replace with actual data from your store/API
-const residents = [
-  { value: "1", label: "Ahmed Hassan - Unit A-101" },
-  { value: "2", label: "Sara Mohamed - Unit B-205" },
-  { value: "3", label: "Omar Ali - Unit C-304" },
-  { value: "4", label: "Fatma Ibrahim - Unit D-402" },
-];
-
-const categories = [
-  { value: "facilities", label: "Facilities" },
-  { value: "services", label: "Services" },
-  { value: "events", label: "Events" },
-  { value: "maintenance", label: "Maintenance" },
-  { value: "security", label: "Security" },
-  { value: "other", label: "Other" },
-];
-
 export function CreateFeedbackModal({
   isOpen,
   onClose,
   onSubmit,
+  categories = [],
+  residentOptions = [],
 }: CreateFeedbackModalProps) {
   const [formData, setFormData] = useState<FeedbackFormData>({
     residentId: "",
@@ -103,13 +90,12 @@ export function CreateFeedbackModal({
         <div className="bg-blue-50 border-2 border-blue-200 rounded-xl p-4">
           <Select
             label="Submit On Behalf Of (Select Resident)"
-            required
             value={formData.residentId}
             onChange={(e) =>
               setFormData({ ...formData, residentId: e.target.value })
             }
-            options={residents}
-            placeholder="Select a resident..."
+            options={residentOptions}
+            placeholder="Select a resident (optional)..."
           />
         </div>
 
@@ -147,7 +133,10 @@ export function CreateFeedbackModal({
               category: e.target.value as FeedbackCategory,
             })
           }
-          options={categories}
+          options={categories.map((value) => ({
+            value,
+            label: value,
+          }))}
           placeholder="Choose a category..."
         />
 

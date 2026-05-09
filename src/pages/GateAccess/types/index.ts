@@ -1,8 +1,8 @@
-export type QRStatus = "Active" | "Used" | "Expired";
-export type VisitorType = "Guest" | "Delivery" | "Service" | "Family";
+export type QRStatus = "Active" | "Used" | "Expired" | "Revoked";
+export type VisitorType = "Guest" | "Delivery" | "Service" | "Family" | "Other";
 
 export interface QRAccessCode {
-  id: number;
+  id: string;
   code: string;
   visitorName: string;
   visitorType: VisitorType;
@@ -12,6 +12,7 @@ export interface QRAccessCode {
   hostResidentId?: string;
   unit: string;
   building?: string;
+  createdAtIso?: string;
   created: string;
   validUntil: string;
   status: QRStatus;

@@ -2,6 +2,7 @@ import { Bell, Search, ChevronDown, Home, ChevronRight } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useState } from "react";
 import ProfileModal from "@/components/common/ProfileModal";
+import { useAuthStore } from "@/features/auth";
 
 interface TopbarProps {
   breadcrumb?: string[];
@@ -9,6 +10,13 @@ interface TopbarProps {
 
 const Topbar = ({ breadcrumb = ["Home", "Dashboard"] }: TopbarProps) => {
   const [profileOpen, setProfileOpen] = useState(false);
+  const { user } = useAuthStore();
+
+  const fullName = user ? `${user.firstName} ${user.lastName}` : "Admin";
+  const initials = user
+    ? `${user.firstName.charAt(0)}${user.lastName.charAt(0)}`.toUpperCase()
+    : "A";
+  const roleLabel = user?.role ?? "Admin";
 
   return (
     <>
@@ -57,14 +65,14 @@ const Topbar = ({ breadcrumb = ["Home", "Dashboard"] }: TopbarProps) => {
             className="flex items-center gap-2.5 pl-3 pr-2 py-1.5 rounded-full bg-gray-50 border border-gray-200 hover:bg-gray-100 transition-colors"
           >
             <div className="w-7 h-7 rounded-full bg-gradient-to-br from-[#00A389] to-[#007A67] flex items-center justify-center text-white text-xs font-bold">
-              MM
+              {initials}
             </div>
             <div className="text-left hidden sm:block">
               <p className="text-xs font-semibold text-gray-800 leading-tight">
-                Mohamed Mahmoud
+                {fullName}
               </p>
               <p className="text-[10px] text-gray-400 leading-tight">
-                Super Admin
+                {roleLabel}
               </p>
             </div>
             <ChevronDown className="w-3.5 h-3.5 text-gray-400" />

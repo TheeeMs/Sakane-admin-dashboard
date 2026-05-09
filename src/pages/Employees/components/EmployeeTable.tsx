@@ -1,4 +1,4 @@
-import { GenericTable } from "@/components/shared/GenericTable";   
+import { GenericTable } from "@/components/shared/GenericTable";
 import { RoleBadge } from "./shared/RoleBadge";
 import { StatusBadge } from "./shared/StatusBadge";
 import { Mail, Phone } from "lucide-react";
@@ -12,20 +12,18 @@ interface EmployeeTableProps {
   onDelete: (employee: Employee) => void;
 }
 
-export function EmployeeTable({ 
-  employees, 
-  onEmployeeClick, 
-  onEdit, 
-  onDelete 
+export function EmployeeTable({
+  employees,
+  onEmployeeClick,
+  onEdit,
+  onDelete,
 }: EmployeeTableProps) {
   return (
     <GenericTable<Employee>
       data={employees}
       onRowClick={onEmployeeClick}
-      
       searchKeys={["name", "email", "phone"]}
       searchPlaceholder="Search by name, email, or phone..."
-
       filters={[
         {
           key: "role",
@@ -47,7 +45,6 @@ export function EmployeeTable({
           ],
         },
       ]}
-
       columns={[
         {
           key: "name",
@@ -75,13 +72,21 @@ export function EmployeeTable({
             </div>
           ),
         },
-        { key: "role", header: "Role", render: (emp) => <RoleBadge role={emp.role} /> },
+        {
+          key: "role",
+          header: "Role",
+          render: (emp) => <RoleBadge role={emp.role} />,
+        },
         { key: "department", header: "Department" },
-        { key: "status", header: "Status", render: (emp) => <StatusBadge status={emp.status} /> },
-        { 
-          key: "lastActive", 
-          header: "Last Active", 
-          render: (emp) => formatDate(emp.lastActive) 
+        {
+          key: "status",
+          header: "Status",
+          render: (emp) => <StatusBadge status={emp.status} />,
+        },
+        {
+          key: "lastActive",
+          header: "Last Active",
+          render: (emp) => formatDate(emp.lastActive),
         },
         {
           key: "actions",
@@ -89,14 +94,20 @@ export function EmployeeTable({
           render: (emp) => (
             <div className="flex gap-2">
               <button
-                onClick={() => onEdit(emp)}
+                onClick={(event) => {
+                  event.stopPropagation();
+                  onEdit(emp);
+                }}
                 className="p-2 rounded-lg hover:bg-teal-50 text-teal-600 transition-colors"
                 title="Edit"
               >
                 Edit
               </button>
               <button
-                onClick={() => onDelete(emp)}
+                onClick={(event) => {
+                  event.stopPropagation();
+                  onDelete(emp);
+                }}
                 className="p-2 rounded-lg hover:bg-red-50 text-red-600 transition-colors"
                 title="Delete"
               >

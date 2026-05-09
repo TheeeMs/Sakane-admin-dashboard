@@ -45,15 +45,18 @@ export function FeedbackCategoryBadge({ category }: CategoryBadgeProps) {
       label: "Other",
       color: "text-gray-600",
     },
-  };
+  } as const;
 
-  const config = categoryConfig[category];
+  const normalized = category?.toLowerCase().trim();
+  const config = categoryConfig[normalized as keyof typeof categoryConfig];
+  const fallback = categoryConfig.other;
+  const label = category?.trim() || fallback.label;
 
   return (
     <IconBadge
-      icon={config.icon}
-      label={config.label}
-      iconColor={config.color}
+      icon={(config ?? fallback).icon}
+      label={config ? config.label : label}
+      iconColor={(config ?? fallback).color}
     />
   );
 }

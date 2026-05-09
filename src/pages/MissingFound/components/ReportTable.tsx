@@ -2,18 +2,10 @@ import { GenericTable } from "@/components/shared/GenericTable";
 import TypeBadge from "./TypeBadge";
 import StatusBadge from "./StatusBadge";
 import { TagIcon, EyeIcon, EditIcon, HistoryIcon, TrashIcon } from "./icons";
-import type { Report, ReportType, ReportStatus } from "../types";
+import type { Report } from "../types";
 
 interface ReportTableProps {
   reports: Report[];
-  totalCount: number;          
-  search: string;
-  typeFilter: ReportType | "All";
-  statusFilter: ReportStatus | "All";
-  onSearchChange: (value: string) => void;
-  onTypeFilterChange: (value: ReportType | "All") => void;
-  onStatusFilterChange: (value: ReportStatus | "All") => void;
-  onClearFilters: () => void;
   onViewReport: (report: Report) => void;
   onEditReport: (report: Report) => void;
   onDeleteReport: (report: Report) => void;
@@ -25,13 +17,11 @@ export default function ReportTable({
   onEditReport,
   onDeleteReport,
 }: ReportTableProps) {
-
   return (
     <GenericTable<Report>
       data={reports}
       searchPlaceholder="Search by title, description, or reporter name..."
       searchKeys={["title", "shortDesc", "reportedBy", "location", "category"]}
-
       filters={[
         {
           key: "type",
@@ -52,7 +42,6 @@ export default function ReportTable({
           ],
         },
       ]}
-
       actions={[
         {
           icon: <EyeIcon />,
@@ -70,7 +59,7 @@ export default function ReportTable({
           icon: <HistoryIcon />,
           hoverColor: "#f59e0b",
           label: "History",
-          action: () => console.log("History clicked"),  
+          action: () => console.log("History clicked"),
         },
         {
           icon: <TrashIcon />,
@@ -79,7 +68,6 @@ export default function ReportTable({
           action: onDeleteReport,
         },
       ]}
-
       columns={[
         {
           key: "type",
@@ -100,7 +88,9 @@ export default function ReportTable({
           header: "Item Details",
           render: (r) => (
             <div>
-              <div className="font-semibold text-gray-900 truncate">{r.title}</div>
+              <div className="font-semibold text-gray-900 truncate">
+                {r.title}
+              </div>
               <div className="text-gray-400 text-xs mt-1">{r.shortDesc}</div>
             </div>
           ),
@@ -129,11 +119,11 @@ export default function ReportTable({
         {
           key: "date",
           header: "Date",
-          render: (r) => <span className="text-gray-600 whitespace-nowrap">{r.date}</span>,
+          render: (r) => (
+            <span className="text-gray-600 whitespace-nowrap">{r.date}</span>
+          ),
         },
       ]}
-
-      
     />
   );
 }

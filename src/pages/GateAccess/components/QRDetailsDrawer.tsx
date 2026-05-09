@@ -1,4 +1,4 @@
-import { X, ChevronDown } from "lucide-react";
+import { X, Download, Trash2 } from "lucide-react";
 import { useEffect, useRef } from "react";
 import type { ResidentInfo, QRStatus } from "../types";
 import { cn } from "@/lib/utils";
@@ -7,6 +7,9 @@ interface QRDetailsDrawerProps {
   isOpen: boolean;
   onClose: () => void;
   resident: ResidentInfo | null;
+  onDownloadCode?: (codeId: string) => void;
+  onDeleteCode?: (codeId: string) => void;
+  deletingCodeId?: string | null;
 }
 
 const StatusBadge = ({ status }: { status: QRStatus }) => {
@@ -25,6 +28,11 @@ const StatusBadge = ({ status }: { status: QRStatus }) => {
       bg: "bg-gray-100",
       text: "text-gray-600",
       dot: "bg-gray-400",
+    },
+    Revoked: {
+      bg: "bg-rose-50",
+      text: "text-rose-700",
+      dot: "bg-rose-500",
     },
   }[status];
 
@@ -46,6 +54,9 @@ export const QRDetailsDrawer = ({
   isOpen,
   onClose,
   resident,
+  onDownloadCode,
+  onDeleteCode,
+  deletingCodeId,
 }: QRDetailsDrawerProps) => {
   const backdropRef = useRef<HTMLDivElement>(null);
 
@@ -131,10 +142,9 @@ export const QRDetailsDrawer = ({
               {resident.qrCodes.map((code) => (
                 <div
                   key={code.id}
-                  className="bg-gray-50 border border-gray-200 rounded-xl p-4 hover:bg-gray-100 transition-colors"
+                  className="rounded-2xl border border-gray-200 bg-gradient-to-br from-white to-gray-50 p-4 shadow-sm transition-all hover:border-gray-300 hover:shadow-md"
                 >
                   <div className="flex items-start gap-3">
-                    {/* Visitor Icon */}
                     <div
                       className="w-10 h-10 rounded-lg flex items-center justify-center text-xl flex-shrink-0"
                       style={{ background: code.visitorIconBg }}
@@ -142,11 +152,10 @@ export const QRDetailsDrawer = ({
                       {code.visitorIcon}
                     </div>
 
-                    {/* Visitor Details */}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-start justify-between gap-2 mb-2">
-                        <div className="flex-1">
-                          <p className="text-sm font-semibold text-gray-900 truncate">
+                    <div className="flex-1 min-w-0 space-y-3">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-semibold text-gray-900 truncate leading-5">
                             {code.visitorName}
                           </p>
                           <p className="text-xs text-gray-500 mt-0.5">
@@ -156,22 +165,46 @@ export const QRDetailsDrawer = ({
                         <StatusBadge status={code.status} />
                       </div>
 
-                      {/* QR Code */}
-                      <code className="block bg-white border border-gray-200 px-2.5 py-1.5 rounded text-xs font-mono text-gray-700 mb-2">
-                        {code.code}
-                      </code>
+                      <div className="rounded-xl border border-gray-200 bg-white px-3 py-2.5">
+                        <p className="text-[11px] uppercase tracking-wide text-gray-400 mb-1">
+                          QR Code
+                        </p>
+                        <code className="block text-xs font-mono text-gray-800 break-all">
+                          {code.code}
+                        </code>
+                      </div>
 
-                      {/* Dates */}
-                      <div className="text-xs text-gray-500 space-y-0.5">
-                        <p>Created: {code.created}</p>
-                        <p>Valid until: {code.validUntil}</p>
+                      <div className="grid grid-cols-1 gap-1.5 text-xs text-gray-500">
+                        <p>
+                          <span className="text-gray-400">Created:</span> {code.created}
+                        </p>
+                        <p>
+                          <span className="text-gray-400">Valid until:</span> {code.validUntil}
+                        </p>
                       </div>
                     </div>
 
-                    {/* Expand Icon */}
-                    <button className="text-gray-400 hover:text-gray-600 transition-colors mt-1">
-                      <ChevronDown className="w-4 h-4" />
-                    </button>
+                    <div className="mt-0.5 flex items-center gap-1.5">
+                      <button
+                        onClick={() => onDownloadCode?.(code.id)}
+                        className="h-8 w-8 rounded-lg border border-gray-200 bg-white text-gray-500 hover:text-gray-700 hover:border-gray-300 transition-colors"
+                        title="Download QR"
+                        type="button"
+                      >
+                        <Download className="w-4 h-4 mx-auto" />
+                      </button>
+                      <button
+                        onClick={() => onDeleteCode?.(code.id)}
+                        disabled={
+                          deletingCodeId === code.id || code.status === "Revoked"
+                        }
+                        className="h-8 w-8 rounded-lg border border-rose-200 bg-rose-50 text-rose-600 hover:bg-rose-100 hover:text-rose-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                        title="Delete QR"
+                        type="button"
+                      >
+                        <Trash2 className="w-4 h-4 mx-auto" />
+                      </button>
+                    </div>
                   </div>
                 </div>
               ))}

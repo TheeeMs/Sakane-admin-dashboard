@@ -10,26 +10,29 @@ export function FeedbackStatusBadge({
   status,
   isAnonymous = false,
 }: StatusBadgeProps) {
+  const normalized = status?.toUpperCase();
   const statusConfig = {
-    pending: {
+    PENDING: {
       variant: "warning" as const,
       label: "Pending",
     },
-    "under-review": {
+    UNDER_REVIEW: {
       variant: "info" as const,
       label: "Under Review",
     },
-    resolved: {
+    RESOLVED: {
       variant: "success" as const,
       label: "Resolved",
     },
-    rejected: {
-      variant: "error" as const,
-      label: "Rejected",
+    ARCHIVED: {
+      variant: "default" as const,
+      label: "Archived",
     },
-  };
+  } as const;
 
-  const config = statusConfig[status];
+  const config =
+    statusConfig[normalized as keyof typeof statusConfig] ??
+    statusConfig.PENDING;
 
   return (
     <div className="flex gap-2">

@@ -5,15 +5,17 @@ import { cn } from "@/lib/utils";
 
 interface QRTableProps {
   data: QRAccessCode[];
+  availableTabs?: Array<"All" | VisitorType>;
   onRowClick?: (code: QRAccessCode) => void;
 }
 
-const FILTER_TABS: Array<"All" | VisitorType> = [
+const DEFAULT_FILTER_TABS: Array<"All" | VisitorType> = [
   "All",
   "Guest",
   "Delivery",
   "Service",
   "Family",
+  "Other",
 ];
 
 const StatusBadge = ({ status }: { status: QRStatus }) => {
@@ -33,6 +35,11 @@ const StatusBadge = ({ status }: { status: QRStatus }) => {
       text: "text-gray-600",
       dot: "bg-gray-400",
     },
+    Revoked: {
+      bg: "bg-rose-50",
+      text: "text-rose-700",
+      dot: "bg-rose-500",
+    },
   }[status];
 
   return (
@@ -49,7 +56,9 @@ const StatusBadge = ({ status }: { status: QRStatus }) => {
   );
 };
 
-export const QRTable = ({ data, onRowClick }: QRTableProps) => {
+export const QRTable = ({ data, availableTabs, onRowClick }: QRTableProps) => {
+  const filterTabs =
+    availableTabs && availableTabs.length > 0 ? availableTabs : DEFAULT_FILTER_TABS;
   const [activeTab, setActiveTab] = useState<"All" | VisitorType>("All");
   const [search, setSearch] = useState("");
 
@@ -85,7 +94,7 @@ export const QRTable = ({ data, onRowClick }: QRTableProps) => {
       {/* Filter Tabs */}
       <div className="border-b border-gray-100 px-6 py-4">
         <div className="flex items-center gap-1 bg-gray-100 rounded-xl p-1 w-fit">
-          {FILTER_TABS.map((tab) => {
+          {filterTabs.map((tab) => {
             const isActive = activeTab === tab;
             const count = getTabCount(tab);
             return (

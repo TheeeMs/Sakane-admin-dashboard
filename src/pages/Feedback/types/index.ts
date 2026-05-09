@@ -1,15 +1,9 @@
 export type FeedbackStatus =
-  | "pending"
-  | "under-review"
-  | "resolved"
-  | "rejected";
-export type FeedbackCategory =
-  | "facilities"
-  | "services"
-  | "events"
-  | "maintenance"
-  | "security"
-  | "other";
+  | "PENDING"
+  | "UNDER_REVIEW"
+  | "RESOLVED"
+  | "ARCHIVED";
+export type FeedbackCategory = string;
 export type FeedbackType = "public" | "private";
 
 export interface FeedbackVotes {
@@ -20,7 +14,7 @@ export interface FeedbackVotes {
 export interface AdminResponse {
   id: string;
   respondedBy: string;
-  respondedAt: string;
+  respondedAt?: string;
   message: string;
 }
 
