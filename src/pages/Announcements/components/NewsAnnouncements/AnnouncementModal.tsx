@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import type { AnnouncementPriority } from "../../data/communicationsApi";
 
 interface AnnouncementModalProps {
@@ -35,28 +35,16 @@ const inputStyle: React.CSSProperties = {
   outline: "none",
 };
 
-export function AnnouncementModal({
-  isOpen,
+function AnnouncementModalContent({
   onClose,
   onSubmit,
   isSubmitting = false,
-}: AnnouncementModalProps) {
+}: Omit<AnnouncementModalProps, "isOpen">) {
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [priority, setPriority] = useState<AnnouncementPriority>("NORMAL");
   const [expiresAt, setExpiresAt] = useState("");
   const [errors, setErrors] = useState<Record<string, string>>({});
-
-  useEffect(() => {
-    if (!isOpen) return;
-    setTitle("");
-    setContent("");
-    setPriority("NORMAL");
-    setExpiresAt("");
-    setErrors({});
-  }, [isOpen]);
-
-  if (!isOpen) return null;
 
   const validate = () => {
     const nextErrors: Record<string, string> = {};
@@ -216,5 +204,22 @@ export function AnnouncementModal({
         </div>
       </div>
     </div>
+  );
+}
+
+export function AnnouncementModal({
+  isOpen,
+  onClose,
+  onSubmit,
+  isSubmitting,
+}: AnnouncementModalProps) {
+  if (!isOpen) return null;
+
+  return (
+    <AnnouncementModalContent
+      onClose={onClose}
+      onSubmit={onSubmit}
+      isSubmitting={isSubmitting}
+    />
   );
 }

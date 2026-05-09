@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import type { Tab, Priority } from "../../types";
 
 export type NotificationFormData = {
@@ -70,7 +70,7 @@ function Field({
   );
 }
 
-export function Modal({
+function ModalContent({
   tab,
   onClose,
   onSubmit,
@@ -88,15 +88,6 @@ export function Modal({
   const [sendType, setSendType] = useState("Instant");
   const [scheduleAt, setScheduleAt] = useState("");
   const [errors, setErrors] = useState<Record<string, string>>({});
-
-  useEffect(() => {
-    setFormTitle("");
-    setMessage("");
-    setPriority("NORMAL");
-    setSendType("Instant");
-    setScheduleAt("");
-    setErrors({});
-  }, [tab]);
 
   const validate = () => {
     if (tab !== "push") return true;
@@ -275,4 +266,8 @@ export function Modal({
       </div>
     </div>
   );
+}
+
+export function Modal(props: ModalProps) {
+  return <ModalContent key={props.tab} {...props} />;
 }

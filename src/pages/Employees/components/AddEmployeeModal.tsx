@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from "react";
+import { useState, type FormEvent } from "react";
 import { Modal, Input, Select, PrimaryButton } from "@/components/shared";
 import type { EmployeeRole } from "../types";
 
@@ -38,21 +38,13 @@ const ROLE_OPTIONS: Array<{ value: EmployeeRole; label: string }> = [
   { value: "security", label: "Security Staff" },
 ];
 
-export function AddEmployeeModal({
-  isOpen,
+function AddEmployeeModalContent({
   isSubmitting,
   onClose,
   onSubmit,
-}: AddEmployeeModalProps) {
+}: Omit<AddEmployeeModalProps, "isOpen">) {
   const [values, setValues] = useState<FormValues>(INITIAL_VALUES);
   const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (isOpen) {
-      setValues(INITIAL_VALUES);
-      setError(null);
-    }
-  }, [isOpen]);
 
   const setField = <K extends keyof FormValues>(
     key: K,
@@ -88,7 +80,7 @@ export function AddEmployeeModal({
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Add Employee" size="md">
+    <>
       <form
         id="add-employee-form"
         onSubmit={handleSubmit}
@@ -179,6 +171,24 @@ export function AddEmployeeModal({
           </PrimaryButton>
         </div>
       </form>
+    </>
+  );
+}
+
+export function AddEmployeeModal({
+  isOpen,
+  isSubmitting,
+  onClose,
+  onSubmit,
+}: AddEmployeeModalProps) {
+  return (
+    <Modal isOpen={isOpen} onClose={onClose} title="Add Employee" size="md">
+      <AddEmployeeModalContent
+        key={isOpen ? "open" : "closed"}
+        isSubmitting={isSubmitting}
+        onClose={onClose}
+        onSubmit={onSubmit}
+      />
     </Modal>
   );
 }

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import type { Tab, PushNotification } from "./types";
 import { PushNotifications } from "./components/PushNotifications";
 import { NewsAnnouncements } from "./components/NewsAnnouncements";
@@ -107,7 +107,7 @@ export default function Announcements() {
         ? "+ New Template"
         : "+ New Notification";
 
-  const updateTabBadges = (tabsData: CommunicationTabCounter[]) => {
+  const updateTabBadges = useCallback((tabsData: CommunicationTabCounter[]) => {
     setTabBadges((prev) => {
       const next: Record<string, string> = { ...prev };
       tabsData.forEach((tab) => {
@@ -115,52 +115,55 @@ export default function Announcements() {
       });
       return next;
     });
-  };
+  }, []);
 
-  const fetchCenterTab = async (
-    tabKey: "PUSH_NOTIFICATIONS" | "SYSTEM_NOTIFICATIONS",
-    statusValue: string,
-    searchValue: string,
-  ) => {
-    try {
-      const res = await communicationsApi.getCenter({
-        tab: tabKey,
-        status: statusValue,
-        search: searchValue || undefined,
-      });
-      const items = res.data.items || [];
-      const mapped = items.map(mapNotificationItem);
-      if (tabKey === "PUSH_NOTIFICATIONS") {
-        setPushItems(mapped);
-        setPushStatusOptions(
-          (res.data.statuses || []).map((status) => ({
-            value: status.key,
-            label: status.label,
-            count: status.count,
-          })),
-        );
-      } else {
-        setSystemItems(mapped);
-        setSystemStatusOptions(
-          (res.data.statuses || []).map((status) => ({
-            value: status.key,
-            label: status.label,
-            count: status.count,
-          })),
-        );
+  const fetchCenterTab = useCallback(
+    async (
+      tabKey: "PUSH_NOTIFICATIONS" | "SYSTEM_NOTIFICATIONS",
+      statusValue: string,
+      searchValue: string,
+    ) => {
+      try {
+        const res = await communicationsApi.getCenter({
+          tab: tabKey,
+          status: statusValue,
+          search: searchValue || undefined,
+        });
+        const items = res.data.items || [];
+        const mapped = items.map(mapNotificationItem);
+        if (tabKey === "PUSH_NOTIFICATIONS") {
+          setPushItems(mapped);
+          setPushStatusOptions(
+            (res.data.statuses || []).map((status) => ({
+              value: status.key,
+              label: status.label,
+              count: status.count,
+            })),
+          );
+        } else {
+          setSystemItems(mapped);
+          setSystemStatusOptions(
+            (res.data.statuses || []).map((status) => ({
+              value: status.key,
+              label: status.label,
+              count: status.count,
+            })),
+          );
+        }
+        updateTabBadges(res.data.tabs || []);
+      } catch (err) {
+        console.error("Failed to load communications center", err);
+        if (tabKey === "PUSH_NOTIFICATIONS") {
+          setPushItems([]);
+          setPushStatusOptions([]);
+        } else {
+          setSystemItems([]);
+          setSystemStatusOptions([]);
+        }
       }
-      updateTabBadges(res.data.tabs || []);
-    } catch (err) {
-      console.error("Failed to load communications center", err);
-      if (tabKey === "PUSH_NOTIFICATIONS") {
-        setPushItems([]);
-        setPushStatusOptions([]);
-      } else {
-        setSystemItems([]);
-        setSystemStatusOptions([]);
-      }
-    }
-  };
+    },
+    [updateTabBadges],
+  );
 
   const handleDeleteNotification = async (
     id: string,
@@ -213,7 +216,7 @@ export default function Announcements() {
   useEffect(() => {
     fetchCenterTab("PUSH_NOTIFICATIONS", pushStatus, pushSearch);
     fetchCenterTab("SYSTEM_NOTIFICATIONS", systemStatus, systemSearch);
-  }, []);
+  }, [fetchCenterTab, pushStatus, pushSearch, systemStatus, systemSearch]);
 
   useEffect(() => {
     if (activeTab === "push") {
@@ -222,7 +225,14 @@ export default function Announcements() {
     if (activeTab === "system") {
       fetchCenterTab("SYSTEM_NOTIFICATIONS", systemStatus, systemSearch);
     }
-  }, [activeTab, pushStatus, pushSearch, systemStatus, systemSearch]);
+  }, [
+    activeTab,
+    fetchCenterTab,
+    pushStatus,
+    pushSearch,
+    systemStatus,
+    systemSearch,
+  ]);
 
   return (
     <div
