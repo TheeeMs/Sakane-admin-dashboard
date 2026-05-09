@@ -8,6 +8,7 @@ import GateAccessPage from "@/pages/GateAccess/GateAccessPage";
 import { EventsPage } from "@/pages/Events/EventsPage";
 import { FeedbackPage } from "@/pages/Feedback/FeedbackPage";
 import { EmployeesPage } from "@/pages/Employees/EmployeesPage";
+import Settings from "@/pages/Settings/Settings";
 import MaintenancePage from "@/pages/Maintenance/MaintenancePage";
 import { PaymentsPage } from "@/pages/Payments/PaymentsPage";
 import LoginPage from "@/pages/Auth/LoginPage";
@@ -27,6 +28,7 @@ const AppRouter = () => {
           <Route path="/events" element={<EventsPage />} />
           <Route path="/feedback" element={<FeedbackPage />} />
           <Route path="/employees" element={<EmployeesPage />} />
+          <Route path="/settings" element={<Settings />} />
           <Route path="/maintenance" element={<MaintenancePage />} />
           <Route path="/payments" element={<PaymentsPage />} />
         </Route>

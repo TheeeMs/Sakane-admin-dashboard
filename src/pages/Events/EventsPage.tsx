@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Calendar,
   Clock,
@@ -19,6 +19,102 @@ import {
   CreateEventModal,
 } from "./components";
 import { PrimaryButton, StatCard } from "@/components/shared";
+
+const formatDate = (value?: string | null) => {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  return date.toISOString().slice(0, 10);
+};
+
+const formatTime = (value?: string | null) => {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  return date.toISOString().slice(11, 16);
+};
+
+const mapStatus = (raw?: string | null): Event["status"] => {
+  const normalized = (raw || "").toLowerCase();
+  switch (normalized) {
+    case "approved":
+      return "approved";
+    case "ongoing":
+      return "ongoing";
+    case "completed":
+      return "completed";
+    case "rejected":
+    case "cancelled":
+      return "rejected";
+    case "proposed":
+    case "pending":
+    default:
+      return "pending";
+  }
+};
+
+const parseTags = (raw?: unknown): string[] => {
+  if (!raw) return [];
+  if (typeof raw === "string") {
+    return raw
+      .split(",")
+      .map((tag) => tag.trim())
+      .filter(Boolean);
+  }
+  if (Array.isArray(raw)) {
+    return raw.map((tag) => String(tag).trim()).filter(Boolean);
+  }
+  return [];
+};
+
+const mapCategory = (raw?: string | null): Event["category"] => {
+  const normalized = (raw || "").toLowerCase();
+  switch (normalized) {
+    case "social":
+      return "social";
+    case "sports":
+      return "sports";
+    case "health":
+    case "health & wellness":
+    case "health and wellness":
+      return "health";
+    case "entertainment":
+      return "entertainment";
+    case "cultural":
+      return "cultural";
+    case "educational":
+    case "education":
+      return "education";
+    default:
+      return "social";
+  }
+};
+
+const normalizeEvent = (raw: AdminEventCardItemDto, index: number): Event => {
+  const organizerName =
+    raw.organizerName || raw.hostName || "Unknown organizer";
+  const rawTags = (raw as Record<string, unknown>).tags;
+  return {
+    id: raw.eventId ?? `event-${index}`,
+    title: raw.title ?? "Untitled Event",
+    description: raw.description ?? "",
+    imageUrl: raw.imageUrl ?? undefined,
+    status: mapStatus(raw.uiStatus || raw.workflowStatus),
+    category: mapCategory(raw.category),
+    organizer: {
+      name: organizerName,
+    },
+    location: raw.location ?? "",
+    startDate: formatDate(raw.startDate),
+    endDate: formatDate(raw.endDate),
+    startTime: formatTime(raw.startDate),
+    endTime: formatTime(raw.endDate) || undefined,
+    capacity: raw.maxAttendees ?? 0,
+    attendees: raw.currentAttendees ?? 0,
+    tags: parseTags(rawTags),
+    createdAt: raw.createdAt ?? new Date().toISOString(),
+  };
+};
 
 export function EventsPage() {
   const [events, setEvents] = useState<Event[]>([]);
@@ -56,96 +152,7 @@ export function EventsPage() {
     setIsCreateOpen(true);
   };
 
-  const formatDate = (value?: string | null) => {
-    if (!value) return "";
-    const date = new Date(value);
-    if (Number.isNaN(date.getTime())) return "";
-    return date.toISOString().slice(0, 10);
-  };
-
-  const formatTime = (value?: string | null) => {
-    if (!value) return "";
-    const date = new Date(value);
-    if (Number.isNaN(date.getTime())) return "";
-    return date.toISOString().slice(11, 16);
-  };
-
-  const mapStatus = (raw?: string | null): Event["status"] => {
-    const normalized = (raw || "").toLowerCase();
-    switch (normalized) {
-      case "approved":
-        return "approved";
-      case "ongoing":
-        return "ongoing";
-      case "completed":
-        return "completed";
-      case "rejected":
-      case "cancelled":
-        return "rejected";
-      case "proposed":
-      case "pending":
-      default:
-        return "pending";
-    }
-  };
-
-  const parseTags = (raw?: string | null) => {
-    if (!raw) return [];
-    return raw
-      .split(",")
-      .map((tag) => tag.trim())
-      .filter(Boolean);
-  };
-
-  const mapCategory = (raw?: string | null): Event["category"] => {
-    const normalized = (raw || "").toLowerCase();
-    switch (normalized) {
-      case "social":
-        return "social";
-      case "sports":
-        return "sports";
-      case "health":
-      case "health & wellness":
-      case "health and wellness":
-        return "health";
-      case "entertainment":
-        return "entertainment";
-      case "cultural":
-        return "cultural";
-      case "educational":
-      case "education":
-        return "education";
-      default:
-        return "social";
-    }
-  };
-
-  const normalizeEvent = (raw: AdminEventCardItemDto, index: number): Event => {
-    const organizerName =
-      raw.organizerName || raw.hostName || "Unknown organizer";
-    return {
-      id: raw.eventId ?? `event-${index}`,
-      title: raw.title ?? "Untitled Event",
-      description: raw.description ?? "",
-      imageUrl: raw.imageUrl ?? undefined,
-      status: mapStatus(raw.uiStatus || raw.workflowStatus),
-      category: mapCategory(raw.category),
-      organizer: {
-        name: organizerName,
-      },
-      location: raw.location ?? "",
-      startDate: formatDate(raw.startDate),
-      endDate: formatDate(raw.endDate),
-      startTime: formatTime(raw.startDate),
-      endTime: formatTime(raw.endDate) || undefined,
-      capacity: raw.maxAttendees ?? 0,
-      attendees: raw.currentAttendees ?? 0,
-      tags: parseTags((raw as any).tags),
-      createdAt: raw.createdAt ?? new Date().toISOString(),
-    };
-  };
-
-  const fetchEvents = async () => {
+  const fetchEvents = useCallback(async () => {
     try {
       setLoading(true);
       const res = await eventsApi.listEvents();
@@ -162,9 +169,9 @@ export function EventsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  const fetchPendingEvents = async () => {
+  const fetchPendingEvents = useCallback(async () => {
     try {
       setPendingLoading(true);
       const res = await eventsApi.listEvents({
@@ -180,9 +187,9 @@ export function EventsPage() {
     } finally {
       setPendingLoading(false);
     }
-  };
+  }, []);
 
-  const fetchCategories = async () => {
+  const fetchCategories = useCallback(async () => {
     try {
       const res = await eventsApi.listCategories();
       setCategories(res.data || []);
@@ -190,7 +197,7 @@ export function EventsPage() {
       console.error("Failed to load categories", err);
       setCategories([]);
     }
-  };
+  }, []);
 
   const categoryOptions = categories.length
     ? categories
@@ -206,7 +213,7 @@ export function EventsPage() {
   useEffect(() => {
     fetchEvents();
     fetchCategories();
-  }, []);
+  }, [fetchCategories, fetchEvents]);
 
   const handleCreateSubmit = async (
     payload: Parameters<typeof eventsApi.createEvent>[0],

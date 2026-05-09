@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import type { Announcement } from "../../types";
 import { AnnouncementCard } from "./AnnouncementCard";
 import {
@@ -50,7 +50,7 @@ export function NewsAnnouncements({
   const [list, setList] = useState<Announcement[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const fetchAnnouncements = async () => {
+  const fetchAnnouncements = useCallback(async () => {
     try {
       const res = await communicationsApi.getCenter({
         tab: "NEWS_ANNOUNCEMENTS",
@@ -71,7 +71,7 @@ export function NewsAnnouncements({
       setList([]);
       onCountChange?.(0);
     }
-  };
+  }, [onCountChange]);
 
   const handleCreate = async (data: AnnouncementFormData) => {
     try {
@@ -102,7 +102,7 @@ export function NewsAnnouncements({
 
   useEffect(() => {
     fetchAnnouncements();
-  }, []);
+  }, [fetchAnnouncements]);
 
   return (
     <div>

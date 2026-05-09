@@ -1,57 +1,45 @@
-import { X, Shield, Calendar, Save, PenLine, Phone, Mail, Loader2, AlertCircle, CheckCircle2 } from "lucide-react";
+import {
+  X,
+  Shield,
+  Calendar,
+  Save,
+  PenLine,
+  Phone,
+  Mail,
+  Loader2,
+  AlertCircle,
+  CheckCircle2,
+} from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { useAuthStore } from "@/features/auth";
+import type { AuthUser } from "@/features/auth/domain/types";
 
 interface ProfileModalProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
-const ProfileModal = ({ isOpen, onClose }: ProfileModalProps) => {
-  const { user } = useAuthStore();
+type AuthUserValue = AuthUser | null;
 
+const ProfileModalContent = ({
+  user,
+  onClose,
+}: {
+  user: AuthUserValue;
+  onClose: () => void;
+}) => {
   const [form, setForm] = useState({
-    firstName: "",
-    lastName: "",
-    email: "",
-    phone: "",
+    firstName: user?.firstName ?? "",
+    lastName: user?.lastName ?? "",
+    email: user?.email ?? "",
+    phone: user?.phoneNumber ?? "",
   });
 
-  const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "success" | "error">("idle");
-
-  // Sync form with real user data whenever user or modal opens
-  useEffect(() => {
-    if (user) {
-      setForm({
-        firstName: user.firstName,
-        lastName: user.lastName,
-        email: user.email ?? "",
-        phone: user.phoneNumber,
-      });
-    }
-  }, [user, isOpen]);
-
-  // Close on Escape key
-  useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    };
-    if (isOpen) document.addEventListener("keydown", handler);
-    return () => document.removeEventListener("keydown", handler);
-  }, [isOpen, onClose]);
-
-  // Prevent body scroll when open
-  useEffect(() => {
-    if (isOpen) document.body.style.overflow = "hidden";
-    else document.body.style.overflow = "";
-    return () => {
-      document.body.style.overflow = "";
-    };
-  }, [isOpen]);
+  const [saveStatus, setSaveStatus] = useState<
+    "idle" | "saving" | "success" | "error"
+  >("idle");
 
   const backdropRef = useRef<HTMLDivElement>(null);
-
-  if (!isOpen) return null;
 
   const handleBackdropClick = (e: React.MouseEvent) => {
     if (e.target === backdropRef.current) onClose();
@@ -74,8 +62,8 @@ const ProfileModal = ({ isOpen, onClose }: ProfileModalProps) => {
     user?.loginMethod === "EMAIL"
       ? "Email"
       : user?.loginMethod === "PHONE"
-      ? "Phone (OTP)"
-      : user?.loginMethod ?? "—";
+        ? "Phone (OTP)"
+        : (user?.loginMethod ?? "—");
 
   return (
     <div
@@ -159,7 +147,7 @@ const ProfileModal = ({ isOpen, onClose }: ProfileModalProps) => {
                 />
               </div>
               <div className="col-span-1">
-                <label className="text-xs text-gray-500 mb-1 block font-medium flex items-center gap-1.5">
+                <label className="text-xs text-gray-500 mb-1 font-medium flex items-center gap-1.5">
                   <Mail className="w-3 h-3" /> Email Address
                 </label>
                 <input
@@ -171,7 +159,7 @@ const ProfileModal = ({ isOpen, onClose }: ProfileModalProps) => {
                 />
               </div>
               <div className="col-span-1">
-                <label className="text-xs text-gray-500 mb-1 block font-medium flex items-center gap-1.5">
+                <label className="text-xs text-gray-500 mb-1 font-medium flex items-center gap-1.5">
                   <Phone className="w-3 h-3" /> Phone Number
                 </label>
                 <input
@@ -265,6 +253,32 @@ const ProfileModal = ({ isOpen, onClose }: ProfileModalProps) => {
       </div>
     </div>
   );
+};
+
+const ProfileModal = ({ isOpen, onClose }: ProfileModalProps) => {
+  const { user } = useAuthStore();
+
+  // Close on Escape key
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    if (isOpen) document.addEventListener("keydown", handler);
+    return () => document.removeEventListener("keydown", handler);
+  }, [isOpen, onClose]);
+
+  // Prevent body scroll when open
+  useEffect(() => {
+    if (isOpen) document.body.style.overflow = "hidden";
+    else document.body.style.overflow = "";
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [isOpen]);
+
+  if (!isOpen) return null;
+
+  return <ProfileModalContent user={user} onClose={onClose} />;
 };
 
 export default ProfileModal;

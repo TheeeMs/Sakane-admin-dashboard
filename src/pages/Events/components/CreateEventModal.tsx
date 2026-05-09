@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Modal } from "@/components/shared/Modal/Modal";
 import { Input } from "@/components/shared/FormInputs/Input";
 import { Textarea } from "@/components/shared/FormInputs/Textarea";
@@ -91,13 +91,7 @@ export function CreateEventModal({
   submitting,
 }: CreateEventModalProps) {
   const [form, setForm] = useState<CreateEventFormData>(emptyForm);
-
-  useEffect(() => {
-    if (!isOpen) return;
-    if (!form.category && categories.length > 0) {
-      setForm((prev) => ({ ...prev, category: categories[0] }));
-    }
-  }, [isOpen, categories, form.category]);
+  const resolvedCategory = form.category || categories[0] || "";
 
   const updateField = <K extends keyof CreateEventFormData>(
     key: K,
@@ -124,7 +118,7 @@ export function CreateEventModal({
       alert("Please provide a date and time for the event.");
       return;
     }
-    if (!form.category) {
+    if (!resolvedCategory) {
       alert("Please select a category.");
       return;
     }
@@ -137,7 +131,7 @@ export function CreateEventModal({
       time: form.time,
       duration: toNumber(form.duration),
       durationUnit: form.durationUnit,
-      category: form.category || undefined,
+      category: resolvedCategory || undefined,
       maxAttendees: toNumber(form.maxAttendees),
       imageUrl: form.imageUrl.trim() || undefined,
       hostName: form.hostName.trim() || undefined,
@@ -230,7 +224,7 @@ export function CreateEventModal({
         <Select
           label="Category"
           required
-          value={form.category}
+          value={resolvedCategory}
           onChange={(e) => updateField("category", e.target.value)}
           options={categories.map((category) => ({
             value: category,
