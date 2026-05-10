@@ -1,6 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { toast } from "sonner";
-import { isAxiosError } from "axios";
 import {
   CheckCircle2,
   FileText,
@@ -13,7 +12,7 @@ import {
   Zap,
 } from "lucide-react";
 import type { PushNotification } from "../../types";
-import { systemApi } from "./systemApi";
+import { communicationsApi } from "../../data/communicationsApi";
 import { SystemNotifCard } from "./SystemNotifCard";
 import {
   CreateTemplateModal,
@@ -23,52 +22,7 @@ import {
   EditTemplateModal,
   type EditTemplateFormData,
 } from "./EditTemplateModal";
-import { LocalViewModal } from "./LocalViewModal";
-import {
-  addLocalTemplate,
-  getLocalTemplates,
-  isKnownPushId,
-  registerSystemIds,
-  removeLocalTemplate,
-  unregisterSystemId,
-} from "./templateStore";
 
-/* ──────────── Error helpers ──────────── */
-type ProblemDetail = {
-  type?: string;
-  title?: string;
-  status?: number;
-  detail?: string;
-  message?: string;
-  errors?: Record<string, string[]> | string[];
-};
-
-function extractApiError(err: unknown, fallback: string): string {
-  if (isAxiosError(err)) {
-    const data = err.response?.data as ProblemDetail | string | undefined;
-    if (typeof data === "string" && data.trim()) return data;
-    if (data && typeof data === "object") {
-      const detail = data.detail || data.message || data.title;
-      if (detail) {
-        if (data.errors) {
-          const flat = Array.isArray(data.errors)
-            ? data.errors.join(", ")
-            : Object.values(data.errors).flat().join(", ");
-          if (flat) return detail + " — " + flat;
-        }
-        return detail;
-      }
-    }
-    if (err.response?.status === 409)
-      return "Cannot modify this notification — it may have already been sent or is locked by the server.";
-    if (err.response?.status)
-      return "Request failed (" + err.response.status + "). Please try again.";
-  }
-  if (err instanceof Error && err.message) return err.message;
-  return fallback;
-}
-
-/* ──────────── Types ──────────── */
 interface SystemNotificationsProps {
   items: PushNotification[];
   onDelete: (id: string) => void;
@@ -142,19 +96,6 @@ function typeToPriority(type: string): string {
   }
 }
 
-function makeLocalId(): string {
-  return (
-    "local-" +
-    Date.now().toString(36) +
-    "-" +
-    Math.random().toString(36).slice(2, 8)
-  );
-}
-
-function isLocalId(id: string): boolean {
-  return typeof id === "string" && id.startsWith("local-");
-}
-
 export function SystemNotifications({
   items,
   onDelete,
@@ -166,73 +107,32 @@ export function SystemNotifications({
   onStatusChange,
   onView,
 }: SystemNotificationsProps) {
-  /* modal state */
   const [createOpen, setCreateOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [editingNotif, setEditingNotif] = useState<PushNotification | null>(
     null,
   );
-  const [viewingLocal, setViewingLocal] = useState<PushNotification | null>(
-    null,
-  );
   const [isCreating, setIsCreating] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
 
-  /* local templates */
-  const [localTemplates, setLocalTemplates] = useState<PushNotification[]>(
-    () => getLocalTemplates(),
-  );
-
-  useEffect(() => {
-    const onStorage = () => setLocalTemplates(getLocalTemplates());
-    if (typeof window !== "undefined") {
-      window.addEventListener("storage", onStorage);
-      return () => window.removeEventListener("storage", onStorage);
-    }
-    return undefined;
-  }, []);
-
-  /* Register the ids the API tells us belong to the System tab.
-   * registerSystemIds enforces first-seen ownership against pushIds. */
-  const apiIds = useMemo(
-    () => items.map((n) => n.id).filter((id): id is string => Boolean(id)),
-    [items],
-  );
-  useEffect(() => {
-    if (apiIds.length > 0) registerSystemIds(apiIds);
-  }, [apiIds]);
-
-  /* Merged & deduped list:
-   *   - drop API items already claimed by Push
-   *   - prepend locally-stored templates (newest first) */
-  const merged = useMemo<PushNotification[]>(() => {
-    const localById = new Map<string, PushNotification>(
-      localTemplates.map((t) => [t.id, t]),
-    );
-    const apiCleaned = items.filter(
-      (n) => !isKnownPushId(n.id) && !localById.has(n.id),
-    );
-    return [...localTemplates, ...apiCleaned];
-  }, [items, localTemplates]);
-
   const filtered = useMemo(
     () =>
-      merged.filter(
+      items.filter(
         (n) =>
           n.title.toLowerCase().includes(search.toLowerCase()) ||
           n.description.toLowerCase().includes(search.toLowerCase()),
       ),
-    [merged, search],
+    [items, search],
   );
 
   const summary = useMemo(() => {
-    const total = merged.length;
-    const active = merged.filter((n) => n.status === "Sent").length;
-    const totalSent = merged.reduce((acc, n) => acc + (n.recipients ?? 0), 0);
+    const total = items.length;
+    const active = items.filter((n) => n.status === "Sent").length;
+    const totalSent = items.reduce((acc, n) => acc + (n.recipients ?? 0), 0);
     const successAvg =
-      merged.length > 0
-        ? merged.reduce((acc, n) => acc + (n.readPercent ?? 0), 0) /
-          merged.length
+      items.length > 0
+        ? items.reduce((acc, n) => acc + (n.readPercent ?? 0), 0) /
+          items.length
         : 0;
     return {
       active,
@@ -240,134 +140,62 @@ export function SystemNotifications({
       successAvg: Number(successAvg.toFixed(1)),
       total,
     };
-  }, [merged]);
+  }, [items]);
 
-  /* Create */
+  /* Create template — uses existing POST endpoint, then triggers parent refetch */
   const handleCreateTemplate = async (data: CreateTemplateFormData) => {
-    const optimistic: PushNotification = {
-      id: makeLocalId(),
-      title: data.name,
-      status: data.enabled ? "Sent" : "Draft",
-      priority:
-        typeToPriority(data.type) === "HIGH"
-          ? "HIGH"
-          : typeToPriority(data.type) === "LOW"
-            ? "LOW"
-            : "NORMAL",
-      description: data.message,
-      recipients: 0,
-      readCount: 0,
-      readPercent: 0,
-      sentAt: undefined,
-      scheduledAt: data.trigger,
-      sentBy: "Admin",
-    };
-
     try {
       setIsCreating(true);
-      addLocalTemplate(optimistic);
-      setLocalTemplates(getLocalTemplates());
-
-      try {
-        await systemApi.createTemplate({
-          title: data.name,
-          message: data.message,
-          priority: typeToPriority(data.type),
-          scheduleAt: null,
-          sendToAll: true,
-        });
-      } catch (apiErr) {
-        toast.warning(
-          "Template saved locally. Backend sync failed: " +
-            extractApiError(apiErr, "unknown error"),
-        );
-        setCreateOpen(false);
-        onRefresh();
-        return;
-      }
-
+      await communicationsApi.createPushNotification({
+        title: data.name,
+        message: data.message,
+        priority: typeToPriority(data.type),
+        scheduleAt: null,
+        sendToAll: true,
+      });
       toast.success("Template created successfully");
       setCreateOpen(false);
       onRefresh();
+    } catch (err) {
+      const msg =
+        err instanceof Error ? err.message : "Failed to create template";
+      toast.error(msg);
     } finally {
       setIsCreating(false);
     }
   };
 
-  /* Edit */
+  /* Edit template — uses existing PATCH endpoint */
   const handleEditTemplate = async (
     notif: PushNotification,
     data: EditTemplateFormData,
   ) => {
-    const local = isLocalId(notif.id);
     try {
       setIsEditing(true);
-
-      const updated: PushNotification = {
-        ...notif,
-        title: data.name,
-        description: data.message,
-        scheduledAt: data.trigger,
-      };
-
-      if (local) {
-        addLocalTemplate(updated);
-        setLocalTemplates(getLocalTemplates());
-        toast.success("Template updated successfully");
-        setEditOpen(false);
-        setEditingNotif(null);
-        return;
-      }
-
-      const payload: { title?: string; message?: string } = {};
-      if (data.name && data.name !== notif.title) payload.title = data.name;
-      if (data.message && data.message !== notif.description)
-        payload.message = data.message;
-
-      if (Object.keys(payload).length === 0) {
-        toast.info("No changes to save");
-        setEditOpen(false);
-        setEditingNotif(null);
-        return;
-      }
-
-      await systemApi.updateTemplate(notif.id, payload);
+      await communicationsApi.updateNotificationItem(
+        notif.id,
+        {
+          title: data.name,
+          message: data.message,
+        },
+        "SYSTEM_NOTIFICATIONS",
+      );
       toast.success("Template updated successfully");
       setEditOpen(false);
       setEditingNotif(null);
       onRefresh();
     } catch (err) {
-      toast.error(extractApiError(err, "Failed to update template"));
+      const msg =
+        err instanceof Error ? err.message : "Failed to update template";
+      toast.error(msg);
     } finally {
       setIsEditing(false);
     }
   };
 
-  /* View — route local templates to local modal, others to parent's API view */
-  const handleView = (notif: PushNotification) => {
-    if (isLocalId(notif.id)) {
-      setViewingLocal(notif);
-      return;
-    }
-    onView?.(notif);
-  };
-
-  /* Delete — clean up registry + local store */
-  const handleDelete = async (id: string) => {
-    const local = isLocalId(id);
-    removeLocalTemplate(id);
-    setLocalTemplates(getLocalTemplates());
-    unregisterSystemId(id);
-    if (!local) {
-      onDelete(id);
-    } else {
-      toast.success("Template deleted");
-    }
-  };
-
   return (
     <div>
-      {/* Section header */}
+      {/* Section header with Create button */}
       <div className="flex items-center justify-between flex-wrap gap-3 mb-4">
         <div>
           <h2 className="m-0 text-[15px] font-bold text-gray-900">
@@ -501,12 +329,12 @@ export function SystemNotifications({
             <SystemNotifCard
               key={n.id}
               notif={n}
-              onAnalytics={handleView}
+              onAnalytics={onView}
               onEdit={(notif) => {
                 setEditingNotif(notif);
                 setEditOpen(true);
               }}
-              onDelete={handleDelete}
+              onDelete={onDelete}
             />
           ))}
         </div>
@@ -528,16 +356,6 @@ export function SystemNotifications({
         }}
         onSave={handleEditTemplate}
         isSubmitting={isEditing}
-      />
-      <LocalViewModal
-        isOpen={Boolean(viewingLocal)}
-        notif={viewingLocal}
-        onClose={() => setViewingLocal(null)}
-        onEdit={(notif) => {
-          setViewingLocal(null);
-          setEditingNotif(notif);
-          setEditOpen(true);
-        }}
       />
     </div>
   );

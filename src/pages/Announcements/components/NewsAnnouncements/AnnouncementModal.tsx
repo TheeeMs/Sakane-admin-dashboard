@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useState } from "react";
 import { Image as ImageIcon, Palette, Plus, Upload, X } from "lucide-react";
 import type { AnnouncementPriority } from "../../data/communicationsApi";
 
@@ -14,11 +14,6 @@ export type AnnouncementFormData = {
   content: string;
   priority: AnnouncementPriority;
   expiresAt?: string | null;
-  /** Visual customization captured by the modal. */
-  bgType: "image" | "color";
-  bgColor?: string | null;
-  /** Data URL string for the uploaded cover image (read in the browser). */
-  image?: string | null;
 };
 
 type BackgroundType = "image" | "color";
@@ -40,17 +35,8 @@ const labelClass = "block text-[13px] font-semibold text-gray-700 mb-1.5";
 const inputClass =
   "w-full bg-white border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm text-gray-800 outline-none focus:border-[#00A389] focus:ring-2 focus:ring-[#00A389]/15 transition placeholder:text-gray-400 disabled:bg-gray-50 disabled:cursor-not-allowed";
 
-function readFileAsDataUrl(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(String(reader.result || ""));
-    reader.onerror = () => reject(reader.error);
-    reader.readAsDataURL(file);
-  });
-}
-
 /* Inner form is remounted on each open via key, so useState initializers
- * run with the active notif's values — no setState-in-effect needed. */
+ * run with fresh values — no setState-in-effect needed. */
 function AnnouncementForm({
   onClose,
   onSubmit,
@@ -62,8 +48,6 @@ function AnnouncementForm({
 }) {
   const [bgType, setBgType] = useState<BackgroundType>("image");
   const [bgColor, setBgColor] = useState(COLOR_PALETTE[0]);
-  const [imageDataUrl, setImageDataUrl] = useState<string | null>(null);
-  const [imageError, setImageError] = useState<string | null>(null);
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [priority] = useState<AnnouncementPriority>("NORMAL");
@@ -71,38 +55,11 @@ function AnnouncementForm({
   const [expiresAt, setExpiresAt] = useState("");
   const [publishImmediately, setPublishImmediately] = useState(true);
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
-
-  const handleFileChange = async (
-    e: React.ChangeEvent<HTMLInputElement>,
-  ) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    if (!file.type.startsWith("image/")) {
-      setImageError("Please choose an image file.");
-      return;
-    }
-    if (file.size > 5 * 1024 * 1024) {
-      setImageError("Image is too large (max 5 MB).");
-      return;
-    }
-    try {
-      const dataUrl = await readFileAsDataUrl(file);
-      setImageDataUrl(dataUrl);
-      setImageError(null);
-    } catch {
-      setImageError("Failed to read the image file.");
-    }
-  };
 
   const validate = () => {
     const next: Record<string, string> = {};
     if (!title.trim()) next.title = "Title is required";
     if (!content.trim()) next.content = "Description is required";
-    if (bgType === "image" && !imageDataUrl)
-      next.image = "Please upload a cover image or switch to Color Background";
-    if (bgType === "color" && !bgColor)
-      next.bgColor = "Pick a background color";
     setErrors(next);
     return Object.keys(next).length === 0;
   };
@@ -114,13 +71,10 @@ function AnnouncementForm({
       content: content.trim(),
       priority,
       expiresAt: expiresAt ? new Date(expiresAt).toISOString() : null,
-      bgType,
-      bgColor: bgType === "color" ? bgColor : null,
-      image: bgType === "image" ? imageDataUrl : null,
     });
   };
 
-  // suppress unused warning — publishDate/publishImmediately are in the UI
+  // suppress unused warnings — UI elements still rely on these locally
   void publishDate;
   void publishImmediately;
 
@@ -186,49 +140,16 @@ function AnnouncementForm({
         {bgType === "image" ? (
           <div>
             <label className={labelClass}>Cover Image</label>
-            {imageDataUrl ? (
-              <div className="relative">
-                <img
-                  src={imageDataUrl}
-                  alt="Cover preview"
-                  className="w-full h-44 object-cover rounded-xl border border-gray-200"
-                />
-                <button
-                  type="button"
-                  onClick={() => {
-                    setImageDataUrl(null);
-                    if (fileInputRef.current) fileInputRef.current.value = "";
-                  }}
-                  className="absolute top-2 right-2 w-8 h-8 rounded-full bg-white/90 hover:bg-white text-gray-700 shadow flex items-center justify-center"
-                  title="Remove image"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
-            ) : (
-              <label className="flex flex-col items-center justify-center text-center border-2 border-dashed border-gray-200 rounded-xl px-6 py-10 cursor-pointer bg-gray-50 hover:border-[#00A389] hover:bg-[#00A389]/5 transition">
-                <Upload className="w-7 h-7 text-gray-400 mb-2" />
-                <span className="text-sm font-semibold text-gray-700">
-                  Click to upload or drag and drop
-                </span>
-                <span className="text-xs text-gray-400 mt-1">
-                  Recommended: 800x400px
-                </span>
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={handleFileChange}
-                />
-              </label>
-            )}
-            {imageError && (
-              <p className="text-red-500 text-xs mt-1.5">{imageError}</p>
-            )}
-            {errors.image && !imageError && (
-              <p className="text-red-500 text-xs mt-1.5">{errors.image}</p>
-            )}
+            <label className="flex flex-col items-center justify-center text-center border-2 border-dashed border-gray-200 rounded-xl px-6 py-10 cursor-pointer bg-gray-50 hover:border-[#00A389] hover:bg-[#00A389]/5 transition">
+              <Upload className="w-7 h-7 text-gray-400 mb-2" />
+              <span className="text-sm font-semibold text-gray-700">
+                Click to upload or drag and drop
+              </span>
+              <span className="text-xs text-gray-400 mt-1">
+                Recommended: 800x400px
+              </span>
+              <input type="file" accept="image/*" className="hidden" />
+            </label>
           </div>
         ) : (
           <div>
@@ -256,9 +177,6 @@ function AnnouncementForm({
               className="h-10 rounded-lg border border-gray-200"
               style={{ background: bgColor }}
             />
-            {errors.bgColor && (
-              <p className="text-red-500 text-xs mt-1.5">{errors.bgColor}</p>
-            )}
           </div>
         )}
 

@@ -11,13 +11,7 @@ import {
   AnnouncementModal,
   type AnnouncementFormData,
 } from "./AnnouncementModal";
-import {
-  clearVisual,
-  consumePendingVisualForTitle,
-  getVisual,
-  setPendingVisual,
-  setVisual,
-} from "./visualStorage";
+import { AnnouncementDetailsModal } from "./AnnouncementDetailsModal";
 
 interface NewsAnnouncementsProps {
   isCreateOpen: boolean;
@@ -39,10 +33,8 @@ const mapAnnouncement = (
   raw: CommunicationCardItemDto,
   index: number,
 ): Announcement => {
-  const id = raw.itemId ?? `announcement-${index}`;
-  const stored = getVisual(id);
   return {
-    id,
+    id: raw.itemId ?? `announcement-${index}`,
     title: raw.title ?? "Untitled Announcement",
     description: raw.message ?? "",
     status: raw.status === "Sent" ? "Live" : "Inactive",
@@ -50,8 +42,6 @@ const mapAnnouncement = (
     date: raw.sentAt ? formatShortDate(raw.sentAt) : "",
     priority: raw.priority as Announcement["priority"],
     expiresAt: null,
-    bgColor: stored?.bgColor ?? undefined,
-    image: stored?.image ?? undefined,
   };
 };
 
@@ -64,6 +54,7 @@ export function NewsAnnouncements({
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [viewingItem, setViewingItem] = useState<Announcement | null>(null);
 
   const fetchAnnouncements = async () => {
     setIsLoading(true);
@@ -74,26 +65,7 @@ export function NewsAnnouncements({
         status: "ALL",
       });
       const items = res.data.items || [];
-      const mapped = items.map(mapAnnouncement);
-
-      // If a pending visual is queued (because the API doesn't return it),
-      // attach it to the matching newly-created item by title.
-      const enriched = mapped.map((item) => {
-        if (item.bgColor || item.image) return item;
-        const pending = consumePendingVisualForTitle(item.title);
-        if (pending) {
-          // persist under the real id so it survives future refreshes
-          setVisual(item.id, pending);
-          return {
-            ...item,
-            bgColor: pending.bgColor ?? undefined,
-            image: pending.image ?? undefined,
-          };
-        }
-        return item;
-      });
-
-      setList(enriched);
+      setList(items.map(mapAnnouncement));
       const tabCounter = res.data.tabs?.find(
         (tab) => tab.key === "NEWS_ANNOUNCEMENTS",
       );
@@ -116,23 +88,6 @@ export function NewsAnnouncements({
   const handleCreate = async (data: AnnouncementFormData) => {
     try {
       setIsSubmitting(true);
-
-      // Buffer the visual choice so it can be linked to the new item once
-      // the list refreshes (the backend response doesn't include image/color).
-      if (data.bgType === "color" && data.bgColor) {
-        setPendingVisual({
-          title: data.title,
-          createdAt: Date.now(),
-          bgColor: data.bgColor,
-        });
-      } else if (data.bgType === "image" && data.image) {
-        setPendingVisual({
-          title: data.title,
-          createdAt: Date.now(),
-          image: data.image,
-        });
-      }
-
       await communicationsApi.createAnnouncement({
         title: data.title,
         content: data.content,
@@ -155,7 +110,6 @@ export function NewsAnnouncements({
     try {
       await communicationsApi.deleteAnnouncementItem(id);
       toast.success("Announcement removed");
-      clearVisual(id);
       await fetchAnnouncements();
     } catch (err) {
       const msg =
@@ -225,6 +179,7 @@ export function NewsAnnouncements({
               key={item.id}
               item={item}
               onDelete={handleDeactivate}
+              onView={(it) => setViewingItem(it)}
             />
           ))}
         </div>
@@ -235,6 +190,11 @@ export function NewsAnnouncements({
         onClose={onCloseCreate}
         onSubmit={handleCreate}
         isSubmitting={isSubmitting}
+      />
+      <AnnouncementDetailsModal
+        isOpen={Boolean(viewingItem)}
+        item={viewingItem}
+        onClose={() => setViewingItem(null)}
       />
     </div>
   );
