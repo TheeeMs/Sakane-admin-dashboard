@@ -110,10 +110,10 @@ export default function Announcements() {
   const [systemSearch, setSystemSearch] = useState("");
   const [pushStatus, setPushStatus] = useState("ALL");
   const [systemStatus, setSystemStatus] = useState("ALL");
-  const [pushStatusOptions, setPushStatusOptions] = useState<
+  const [pushStatusOptions, setPushStatusOptions] = useState
     Array<{ value: string; label: string; count?: number }>
   >([]);
-  const [systemStatusOptions, setSystemStatusOptions] = useState<
+  const [systemStatusOptions, setSystemStatusOptions] = useState
     Array<{ value: string; label: string; count?: number }>
   >([]);
 
@@ -129,7 +129,7 @@ export default function Announcements() {
         ? "New Template"
         : "New Notification";
 
-  const updateTabBadges = (tabsData: CommunicationTabCounter[]) => {
+  const updateTabBadges = useCallback((tabsData: CommunicationTabCounter[]) => {
     setTabBadges((prev) => {
       const next: Record<string, string> = { ...prev };
       tabsData.forEach((tab) => {
@@ -137,7 +137,7 @@ export default function Announcements() {
       });
       return next;
     });
-  };
+  }, []);
 
   const fetchCenterTab = useCallback(
     async (
@@ -248,7 +248,6 @@ export default function Announcements() {
     }
   };
 
-  /* initial load + refresh on filter change */
   useEffect(() => {
     fetchCenterTab("PUSH_NOTIFICATIONS", pushStatus, pushSearch);
     fetchCenterTab("SYSTEM_NOTIFICATIONS", systemStatus, systemSearch);
@@ -275,7 +274,6 @@ export default function Announcements() {
 
   return (
     <div className="min-h-screen bg-[#F4F6F8] p-6 md:p-8">
-      {/* Page header */}
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4 mb-7">
         <div className="flex items-start gap-3">
           <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-[#00A389] to-[#007A67] flex items-center justify-center text-white shadow-md shadow-[#00A389]/20">
@@ -305,9 +303,7 @@ export default function Announcements() {
         )}
       </div>
 
-      {/* Card */}
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-        {/* Tabs */}
         <div className="flex border-b border-gray-100 px-2 sm:px-5 overflow-x-auto">
           {tabs.map((t) => {
             const active = activeTab === t.key;
@@ -339,9 +335,7 @@ export default function Announcements() {
           })}
         </div>
 
-        {/* Body */}
         <div className="p-5">
-          {/* Error banner */}
           {currentError && !currentLoading && (
             <div className="mb-5 flex items-center justify-between gap-3 px-4 py-3 rounded-xl bg-red-50 border border-red-200 text-red-700 text-sm">
               <span>⚠️ {currentError}</span>
@@ -360,7 +354,6 @@ export default function Announcements() {
             </div>
           )}
 
-          {/* Loading state */}
           {currentLoading && (
             <div className="flex flex-col items-center justify-center py-16 text-gray-500">
               <div
@@ -371,7 +364,6 @@ export default function Announcements() {
             </div>
           )}
 
-          {/* Tab content */}
           {!currentLoading && activeTab === "push" && (
             <PushNotifications
               items={pushItems}
@@ -413,7 +405,6 @@ export default function Announcements() {
         </div>
       </div>
 
-      {/* Modals */}
       {showModal && (
         <Modal
           tab={activeTab}

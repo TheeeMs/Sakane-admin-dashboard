@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { MessageSquare, Clock, ThumbsUp, TrendingUp, Plus } from "lucide-react";
 import {
   Modal,
@@ -81,7 +81,7 @@ export function FeedbackPage() {
       : ["PENDING", "UNDER_REVIEW", "RESOLVED", "ARCHIVED"];
   }, [statusOptions]);
 
-  const mapStatus = (raw?: string | null): FeedbackStatus => {
+  const mapStatus = useCallback((raw?: string | null): FeedbackStatus => {
     const normalized = (raw || "").toUpperCase();
     switch (normalized) {
       case "UNDER_REVIEW":
@@ -94,112 +94,118 @@ export function FeedbackPage() {
       default:
         return "PENDING";
     }
-  };
+  }, []);
 
-  const normalizeFeedback = (
-    raw: AdminFeedbackCardItemDto,
-    index: number,
-    popularThreshold: number,
-  ): Feedback => {
-    const upvotes = raw.upvotes ?? 0;
-    const downvotes = raw.downvotes ?? 0;
-    const voteCount = raw.voteCount ?? upvotes + downvotes;
-    const createdAt = raw.createdAt ?? new Date().toISOString();
-    const adminResponse = raw.adminResponse?.trim();
+  const normalizeFeedback = useCallback(
+    (
+      raw: AdminFeedbackCardItemDto,
+      index: number,
+      popularThreshold: number,
+    ): Feedback => {
+      const upvotes = raw.upvotes ?? 0;
+      const downvotes = raw.downvotes ?? 0;
+      const voteCount = raw.voteCount ?? upvotes + downvotes;
+      const createdAt = raw.createdAt ?? new Date().toISOString();
+      const adminResponse = raw.adminResponse?.trim();
 
-    return {
-      id: raw.feedbackId || `feedback-${index}`,
-      title: raw.title ?? "Untitled Feedback",
-      description: raw.content ?? "",
-      author: {
-        name: raw.authorName ?? "Resident",
-        unit: raw.unitNumber ?? undefined,
-        isAnonymous: Boolean(raw.isAnonymous),
-      },
-      category: (raw.category ?? "Other").trim() || "Other",
-      status: mapStatus(raw.uiStatus || raw.workflowStatus),
-      type: raw.isPublic ? "public" : "private",
-      votes: {
-        upvotes,
-        downvotes,
-      },
-      createdAt,
-      adminResponse: adminResponse
-        ? {
-            id: raw.feedbackId,
-            respondedBy: "Admin Team",
-            respondedAt: createdAt,
-            message: adminResponse,
-          }
-        : undefined,
-      isPopular: voteCount >= popularThreshold,
-    };
-  };
-
-  const fetchDashboard = async (override?: Partial<typeof filters>) => {
-    try {
-      setLoading(true);
-      const nextFilters = { ...filters, ...override };
-      const params = {
-        tab: nextFilters.tab,
-        search: nextFilters.search || undefined,
-        status: nextFilters.status === "ALL" ? undefined : nextFilters.status,
-        category:
-          nextFilters.category === "ALL" ? undefined : nextFilters.category,
-        page: 0,
-        size: 100,
+      return {
+        id: raw.feedbackId || `feedback-${index}`,
+        title: raw.title ?? "Untitled Feedback",
+        description: raw.content ?? "",
+        author: {
+          name: raw.authorName ?? "Resident",
+          unit: raw.unitNumber ?? undefined,
+          isAnonymous: Boolean(raw.isAnonymous),
+        },
+        category: (raw.category ?? "Other").trim() || "Other",
+        status: mapStatus(raw.uiStatus || raw.workflowStatus),
+        type: raw.isPublic ? "public" : "private",
+        votes: {
+          upvotes,
+          downvotes,
+        },
+        createdAt,
+        adminResponse: adminResponse
+          ? {
+              id: raw.feedbackId,
+              respondedBy: "Admin Team",
+              respondedAt: createdAt,
+              message: adminResponse,
+            }
+          : undefined,
+        isPopular: voteCount >= popularThreshold,
       };
+    },
+    [mapStatus],
+  );
 
-      const res = await feedbackApi.listFeedback(params);
-      const threshold = res.data.summary?.popularThreshold ?? 20;
-      const items = res.data.items || [];
-      setFeedbackList(
-        items.map((item, index) => normalizeFeedback(item, index, threshold)),
-      );
-      const summaryData = res.data.summary;
-      if (summaryData) {
-        setSummary({
-          total: summaryData.totalSuggestions ?? 0,
-          pending: summaryData.pendingReviewCount ?? 0,
-          totalVotes: summaryData.totalVotes ?? 0,
-          popular: summaryData.popularCount ?? 0,
-        });
-      } else {
-        const totalVotes = items.reduce(
-          (acc, item) => acc + (item.upvotes ?? 0) + (item.downvotes ?? 0),
-          0,
+  const fetchDashboard = useCallback(
+    async (override?: Partial<typeof filters>) => {
+      try {
+        setLoading(true);
+        const nextFilters = { ...filters, ...override };
+        const params = {
+          tab: nextFilters.tab,
+          search: nextFilters.search || undefined,
+          status: nextFilters.status === "ALL" ? undefined : nextFilters.status,
+          category:
+            nextFilters.category === "ALL" ? undefined : nextFilters.category,
+          page: 0,
+          size: 100,
+        };
+
+        const res = await feedbackApi.listFeedback(params);
+        const threshold = res.data.summary?.popularThreshold ?? 20;
+        const items = res.data.items || [];
+        setFeedbackList(
+          items.map((item, index) => normalizeFeedback(item, index, threshold)),
         );
-        setSummary({
-          total: items.length,
-          pending: items.filter(
-            (item) =>
-              mapStatus(item.uiStatus || item.workflowStatus) === "PENDING",
-          ).length,
-          totalVotes,
-          popular: items.filter((item) => (item.voteCount ?? 0) >= threshold)
-            .length,
+        const summaryData = res.data.summary;
+        if (summaryData) {
+          setSummary({
+            total: summaryData.totalSuggestions ?? 0,
+            pending: summaryData.pendingReviewCount ?? 0,
+            totalVotes: summaryData.totalVotes ?? 0,
+            popular: summaryData.popularCount ?? 0,
+          });
+        } else {
+          const totalVotes = items.reduce(
+            (acc, item) => acc + (item.upvotes ?? 0) + (item.downvotes ?? 0),
+            0,
+          );
+          setSummary({
+            total: items.length,
+            pending: items.filter(
+              (item) =>
+                mapStatus(item.uiStatus || item.workflowStatus) === "PENDING",
+            ).length,
+            totalVotes,
+            popular: items.filter((item) => (item.voteCount ?? 0) >= threshold)
+              .length,
+          });
+        }
+
+        setTabCounts({
+          publicSuggestions: res.data.tabs?.publicSuggestions ?? 0,
+          privateFeedback: res.data.tabs?.privateFeedback ?? 0,
         });
+      } catch (err) {
+        console.error("Failed to fetch feedback", err);
+        setFeedbackList([]);
+        setSummary({
+          total: 0,
+          pending: 0,
+          totalVotes: 0,
+          popular: 0,
+        });
+      } finally {
+        setLoading(false);
       }
+    },
+    [filters, mapStatus, normalizeFeedback],
+  );
 
-      setTabCounts({
-        publicSuggestions: res.data.tabs?.publicSuggestions ?? 0,
-        privateFeedback: res.data.tabs?.privateFeedback ?? 0,
-      });
-    } catch (err) {
-      console.error("Failed to fetch feedback", err);
-      setFeedbackList([]);
-      setSummary({
-        total: 0,
-        pending: 0,
-        totalVotes: 0,
-        popular: 0,
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchOptions = async () => {
+  const fetchOptions = useCallback(async () => {
     try {
       const [statusesRes, categoriesRes] = await Promise.all([
         feedbackApi.listStatuses(),
@@ -212,9 +218,9 @@ export function FeedbackPage() {
       setStatusOptions([]);
       setCategoryOptions([]);
     }
-  };
+  }, []);
 
-  const fetchResidents = async () => {
+  const fetchResidents = useCallback(async () => {
     try {
       const res = await residentsApi.listResidents({ page: 0, size: 100 });
       const options = (res.data.residents || []).map((resident) => {
@@ -232,13 +238,13 @@ export function FeedbackPage() {
       console.error("Failed to load residents", err);
       setResidentOptions([]);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchDashboard();
     fetchOptions();
     fetchResidents();
-  }, []);
+  }, [fetchDashboard, fetchOptions, fetchResidents]);
 
   // Handlers
   const handleViewDetails = (feedback: Feedback) => {

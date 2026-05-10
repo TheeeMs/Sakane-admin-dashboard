@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from "react";
+import { useState, type FormEvent } from "react";
 import { Modal, Input, Select, PrimaryButton } from "@/components/shared";
 import type { Employee, EmployeeRole, EmployeeStatus } from "../types";
 
@@ -51,32 +51,26 @@ const toDateInput = (value?: string): string => {
   return value.split("T")[0] || "";
 };
 
-export function EditEmployeeModal({
-  isOpen,
+function EditEmployeeModalContent({
   employee,
   isSubmitting,
   onClose,
   onSubmit,
-}: EditEmployeeModalProps) {
-  const [values, setValues] = useState<EditEmployeeValues>(EMPTY_VALUES);
+}: Omit<EditEmployeeModalProps, "isOpen">) {
+  const [values, setValues] = useState<EditEmployeeValues>(
+    employee
+      ? {
+          fullName: employee.name,
+          email: employee.email,
+          phone: employee.phone,
+          role: employee.role,
+          department: employee.department === "-" ? "" : employee.department,
+          hireDate: toDateInput(employee.hireDate),
+          status: employee.status,
+        }
+      : EMPTY_VALUES,
+  );
   const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (!isOpen || !employee) {
-      return;
-    }
-
-    setValues({
-      fullName: employee.name,
-      email: employee.email,
-      phone: employee.phone,
-      role: employee.role,
-      department: employee.department === "-" ? "" : employee.department,
-      hireDate: toDateInput(employee.hireDate),
-      status: employee.status,
-    });
-    setError(null);
-  }, [isOpen, employee]);
 
   const setField = <K extends keyof EditEmployeeValues>(
     key: K,
@@ -107,7 +101,7 @@ export function EditEmployeeModal({
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Edit Employee" size="md">
+    <>
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <Input
@@ -189,6 +183,28 @@ export function EditEmployeeModal({
           </PrimaryButton>
         </div>
       </form>
+    </>
+  );
+}
+
+export function EditEmployeeModal({
+  isOpen,
+  employee,
+  isSubmitting,
+  onClose,
+  onSubmit,
+}: EditEmployeeModalProps) {
+  const resetKey = `${isOpen ? "open" : "closed"}-${employee?.id ?? "empty"}`;
+
+  return (
+    <Modal isOpen={isOpen} onClose={onClose} title="Edit Employee" size="md">
+      <EditEmployeeModalContent
+        key={resetKey}
+        employee={employee}
+        isSubmitting={isSubmitting}
+        onClose={onClose}
+        onSubmit={onSubmit}
+      />
     </Modal>
   );
 }

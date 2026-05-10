@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import type { ReportCategory, ReportType } from "../types";
 import { CloseIcon } from "./icons";
 
@@ -44,7 +44,7 @@ const labelStyle: React.CSSProperties = {
   display: "block",
 };
 
-export default function CreateReportModal({
+function CreateReportModalContent({
   mode = "create",
   initialValues,
   onClose,
@@ -53,14 +53,20 @@ export default function CreateReportModal({
   residentOptions = [],
   isSubmitting = false,
 }: CreateReportModalProps) {
-  const [type, setType] = useState<ReportType>("Missing");
-  const [category, setCategory] = useState<ReportCategory>("Item");
-  const [title, setTitle] = useState("");
-  const [location, setLocation] = useState("");
-  const [contact, setContact] = useState("");
-  const [fullDesc, setFullDesc] = useState("");
-  const [photo, setPhoto] = useState<string | null>(null);
-  const [residentId, setResidentId] = useState("");
+  const [type, setType] = useState<ReportType>(
+    initialValues?.type ?? "Missing",
+  );
+  const [category, setCategory] = useState<ReportCategory>(
+    initialValues?.category ?? "Item",
+  );
+  const [title, setTitle] = useState(initialValues?.title ?? "");
+  const [location, setLocation] = useState(initialValues?.location ?? "");
+  const [contact, setContact] = useState(initialValues?.contact ?? "");
+  const [fullDesc, setFullDesc] = useState(initialValues?.fullDesc ?? "");
+  const [photo, setPhoto] = useState<string | null>(
+    initialValues?.photo ?? null,
+  );
+  const [residentId, setResidentId] = useState(initialValues?.residentId ?? "");
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const effectiveCategories = useMemo(() => {
@@ -69,21 +75,6 @@ export default function CreateReportModal({
     }
     return ["Item", "Pet", "Person", "Vehicle", "Other"];
   }, [categoryOptions]);
-
-  useEffect(() => {
-    if (!initialValues) return;
-    if (initialValues.type) setType(initialValues.type);
-    if (initialValues.category) setCategory(initialValues.category);
-    if (initialValues.title !== undefined) setTitle(initialValues.title);
-    if (initialValues.location !== undefined)
-      setLocation(initialValues.location);
-    if (initialValues.contact !== undefined) setContact(initialValues.contact);
-    if (initialValues.fullDesc !== undefined)
-      setFullDesc(initialValues.fullDesc);
-    if (initialValues.photo !== undefined) setPhoto(initialValues.photo);
-    if (initialValues.residentId !== undefined)
-      setResidentId(initialValues.residentId);
-  }, [initialValues]);
 
   const validate = () => {
     const e: Record<string, string> = {};
@@ -468,4 +459,23 @@ export default function CreateReportModal({
       </div>
     </div>
   );
+}
+
+export default function CreateReportModal(props: CreateReportModalProps) {
+  const resetKey = useMemo(() => {
+    const values = props.initialValues;
+    return [
+      props.mode ?? "create",
+      values?.residentId ?? "",
+      values?.type ?? "",
+      values?.category ?? "",
+      values?.title ?? "",
+      values?.location ?? "",
+      values?.contact ?? "",
+      values?.fullDesc ?? "",
+      values?.photo ?? "",
+    ].join("|");
+  }, [props.mode, props.initialValues]);
+
+  return <CreateReportModalContent key={resetKey} {...props} />;
 }

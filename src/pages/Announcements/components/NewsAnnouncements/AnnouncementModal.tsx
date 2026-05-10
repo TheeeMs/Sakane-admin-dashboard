@@ -35,8 +35,6 @@ const labelClass = "block text-[13px] font-semibold text-gray-700 mb-1.5";
 const inputClass =
   "w-full bg-white border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm text-gray-800 outline-none focus:border-[#00A389] focus:ring-2 focus:ring-[#00A389]/15 transition placeholder:text-gray-400 disabled:bg-gray-50 disabled:cursor-not-allowed";
 
-/* Inner form is remounted on each open via key, so useState initializers
- * run with fresh values — no setState-in-effect needed. */
 function AnnouncementForm({
   onClose,
   onSubmit,
@@ -74,7 +72,6 @@ function AnnouncementForm({
     });
   };
 
-  // suppress unused warnings — UI elements still rely on these locally
   void publishDate;
   void publishImmediately;
 
