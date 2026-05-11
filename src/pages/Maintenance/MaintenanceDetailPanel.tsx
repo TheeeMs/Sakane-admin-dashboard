@@ -36,9 +36,9 @@ const toBackendPriority = (p: "High" | "Medium" | "Low") =>
 
 // ─── Priority button config ───────────────────────────────────────────────────
 const PRIORITY_BTN = {
-  High:   { active: "bg-[#fef2f2] border-[#fb2c36]", text: "text-[#c10007]" },
+  High: { active: "bg-[#fef2f2] border-[#fb2c36]", text: "text-[#c10007]" },
   Medium: { active: "bg-[#fef9c2] border-[#f0b100]", text: "text-[#a65f00]" },
-  Low:    { active: "bg-[#dbeafe] border-[#2b7fff]",  text: "text-[#1447e6]" },
+  Low: { active: "bg-[#dbeafe] border-[#2b7fff]", text: "text-[#1447e6]" },
 };
 
 // ─── Props ────────────────────────────────────────────────────────────────────
@@ -49,18 +49,28 @@ interface Props {
   onUpdated: () => void;
 }
 
-const MaintenanceDetailPanel = ({ request, actorId, onClose, onUpdated }: Props) => {
+const MaintenanceDetailPanel = ({
+  request,
+  actorId,
+  onClose,
+  onUpdated,
+}: Props) => {
   const [card, setCard] = useState<MaintenanceCardDto | null>(null);
   const [cardLoading, setCardLoading] = useState(true);
   const [cardError, setCardError] = useState<string | null>(null);
 
   const [technicians, setTechnicians] = useState<TechnicianOptionDto[]>([]);
 
-  const [priority, setPriority] = useState<"High" | "Medium" | "Low">(request.priority);
+  const [priority, setPriority] = useState<"High" | "Medium" | "Low">(
+    request.priority,
+  );
   const [selectedTech, setSelectedTech] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [saveSuccess, setSaveSuccess] = useState<string | null>(null);
+  const [resolution, setResolution] = useState("");
+  const [totalCost, setTotalCost] = useState("");
+  const [rejectReason, setRejectReason] = useState("");
 
   // ─── Load card ───────────────────────────────────────────────────────────
   useEffect(() => {
@@ -69,6 +79,9 @@ const MaintenanceDetailPanel = ({ request, actorId, onClose, onUpdated }: Props)
     setCard(null);
     setPriority(request.priority);
     setSelectedTech("");
+    setResolution("");
+    setTotalCost("");
+    setRejectReason("");
 
     maintenanceApi
       .getCard(request.id)
@@ -96,7 +109,11 @@ const MaintenanceDetailPanel = ({ request, actorId, onClose, onUpdated }: Props)
     setPriority(p);
     setSaveError(null);
     try {
-      await maintenanceApi.setPriority(request.id, toBackendPriority(p), actorId);
+      await maintenanceApi.setPriority(
+        request.id,
+        toBackendPriority(p),
+        actorId,
+      );
       setSaveSuccess("Priority updated");
       setTimeout(() => setSaveSuccess(null), 2500);
       onUpdated();
@@ -125,20 +142,103 @@ const MaintenanceDetailPanel = ({ request, actorId, onClose, onUpdated }: Props)
     }
   };
 
+  const handleAccept = async () => {
+    setIsSaving(true);
+    setSaveError(null);
+    try {
+      await maintenanceApi.startWork(request.id);
+      setSaveSuccess("Work started");
+      setTimeout(() => setSaveSuccess(null), 2500);
+      onUpdated();
+    } catch (err) {
+      setSaveError(getApiError(err));
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleComplete = async () => {
+    setIsSaving(true);
+    setSaveError(null);
+    const trimmedResolution = resolution.trim();
+    const costValue = totalCost.trim() ? Number(totalCost) : null;
+    if (totalCost.trim() && Number.isNaN(costValue)) {
+      setIsSaving(false);
+      setSaveError("Total cost must be a number");
+      return;
+    }
+
+    try {
+      await maintenanceApi.resolveRequest(request.id, {
+        resolution: trimmedResolution || undefined,
+        totalCost: costValue,
+      });
+      setSaveSuccess("Request completed");
+      setTimeout(() => setSaveSuccess(null), 2500);
+      onUpdated();
+    } catch (err) {
+      setSaveError(getApiError(err));
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleReject = async () => {
+    const reason = rejectReason.trim();
+    if (!reason) {
+      setSaveError("Rejection reason is required");
+      return;
+    }
+
+    setIsSaving(true);
+    setSaveError(null);
+    try {
+      await maintenanceApi.rejectRequest(request.id, { reason });
+      setSaveSuccess("Request rejected");
+      setTimeout(() => setSaveSuccess(null), 2500);
+      onUpdated();
+    } catch (err) {
+      setSaveError(getApiError(err));
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   // ─── Display values (fallback to list-row data while card loads) ─────────
-  const residentName   = card?.requester.fullName   ?? request.residentName ?? "—";
-  const residentUnit   = card?.requester.unitNumber
-    ? `${card.requester.buildingName ?? ""} - Unit ${card.requester.unitNumber}`.trim().replace(/^-\s*/, "")
-    : request.residentUnit ?? request.location;
-  const residentPhone  = card?.requester.phone  ?? "—";
-  const residentEmail  = card?.requester.email  ?? "—";
-  const initials       = (card?.requester.initials ?? residentName.split(" ").filter(Boolean).map((w) => w[0]).join("").toUpperCase().slice(0, 2)) || "??";
-  const description    = card?.description ?? "No description provided.";
-  const photos         = card?.photos ?? [];
-  const timeline       = card?.timeline ?? [];
+  const residentName = card?.requester.fullName ?? request.residentName ?? "—";
+  const residentUnit = card?.requester.unitNumber
+    ? `${card.requester.buildingName ?? ""} - Unit ${card.requester.unitNumber}`
+        .trim()
+        .replace(/^-\s*/, "")
+    : (request.residentUnit ?? request.location);
+  const residentPhone = card?.requester.phone ?? "—";
+  const residentEmail = card?.requester.email ?? "—";
+  const initials =
+    (card?.requester.initials ??
+      residentName
+        .split(" ")
+        .filter(Boolean)
+        .map((w) => w[0])
+        .join("")
+        .toUpperCase()
+        .slice(0, 2)) ||
+    "??";
+  const description = card?.description ?? "No description provided.";
+  const photos = card?.photos ?? [];
+  const timeline = card?.timeline ?? [];
+  const workflowStatus = card?.workflowStatus ?? null;
+  const isClosed =
+    workflowStatus === "RESOLVED" ||
+    workflowStatus === "CANCELLED" ||
+    workflowStatus === "REJECTED";
+  const canAccept =
+    !isClosed &&
+    (workflowStatus === "SUBMITTED" || workflowStatus === "ASSIGNED");
+  const canComplete = !isClosed;
+  const canReject = !isClosed;
 
   return (
-    <div className="bg-white rounded-2xl shadow-[0px_4px_20px_rgba(0,0,0,0.05)] flex flex-col h-full overflow-hidden">
+    <div className="bg-white rounded-2xl shadow-[0px_4px_20px_rgba(0,0,0,0.05)] flex flex-col">
       {/* Header */}
       <div className="flex items-start justify-between p-6 pb-5 border-b border-[#f3f4f6] flex-shrink-0">
         <h3 className="text-xl font-semibold text-[#2d3436] leading-tight pr-4">
@@ -154,17 +254,20 @@ const MaintenanceDetailPanel = ({ request, actorId, onClose, onUpdated }: Props)
 
       {/* Toast */}
       {(saveSuccess || saveError) && (
-        <div className={cn(
-          "mx-6 mt-3 px-4 py-2 rounded-xl text-sm font-medium flex-shrink-0",
-          saveSuccess ? "bg-[#e0f2f1] text-[#00a996]" : "bg-red-50 text-red-600"
-        )}>
+        <div
+          className={cn(
+            "mx-6 mt-3 px-4 py-2 rounded-xl text-sm font-medium flex-shrink-0",
+            saveSuccess
+              ? "bg-[#e0f2f1] text-[#00a996]"
+              : "bg-red-50 text-red-600",
+          )}
+        >
           {saveSuccess ?? saveError}
         </div>
       )}
 
-      {/* Scrollable content */}
-      <div className="flex-1 overflow-y-auto px-6 py-4 space-y-5">
-
+      {/* Content */}
+      <div className="flex-1 px-6 py-4 space-y-5">
         {/* Loading skeleton */}
         {cardLoading && (
           <div className="space-y-3 animate-pulse">
@@ -175,17 +278,23 @@ const MaintenanceDetailPanel = ({ request, actorId, onClose, onUpdated }: Props)
         )}
 
         {cardError && (
-          <p className="text-sm text-red-500 bg-red-50 px-3 py-2 rounded-xl">{cardError}</p>
+          <p className="text-sm text-red-500 bg-red-50 px-3 py-2 rounded-xl">
+            {cardError}
+          </p>
         )}
 
         {/* Resident Card */}
         <div className="bg-[#f9fafb] rounded-xl p-4">
           <div className="flex items-center gap-3 mb-3">
             <div className="w-12 h-12 rounded-full bg-gradient-to-b from-[#00a996] to-[#008c7a] flex items-center justify-center flex-shrink-0">
-              <span className="text-white text-base font-semibold">{initials}</span>
+              <span className="text-white text-base font-semibold">
+                {initials}
+              </span>
             </div>
             <div className="flex-1 min-w-0">
-              <p className="font-semibold text-[#2d3436] text-base leading-tight">{residentName}</p>
+              <p className="font-semibold text-[#2d3436] text-base leading-tight">
+                {residentName}
+              </p>
               <p className="text-[#00a996] text-sm">{residentUnit}</p>
             </div>
             <button className="w-8 h-8 rounded-xl flex items-center justify-center text-[#00a996] hover:bg-[#e0f2f1] transition-colors">
@@ -206,7 +315,9 @@ const MaintenanceDetailPanel = ({ request, actorId, onClose, onUpdated }: Props)
 
         {/* Set Priority */}
         <div className="pb-5 border-b border-[#f3f4f6]">
-          <p className="text-base font-semibold text-[#2d3436] mb-3">Set Priority</p>
+          <p className="text-base font-semibold text-[#2d3436] mb-3">
+            Set Priority
+          </p>
           <div className="flex gap-2">
             {(["High", "Medium", "Low"] as const).map((p) => {
               const cfg = PRIORITY_BTN[p];
@@ -217,7 +328,9 @@ const MaintenanceDetailPanel = ({ request, actorId, onClose, onUpdated }: Props)
                   onClick={() => void handleSetPriority(p)}
                   className={cn(
                     "flex-1 py-2.5 rounded-xl border-2 text-base font-normal transition-all duration-150",
-                    isActive ? `${cfg.active} ${cfg.text}` : "border-[#e5e7eb] text-[#636e72] hover:border-gray-300"
+                    isActive
+                      ? `${cfg.active} ${cfg.text}`
+                      : "border-[#e5e7eb] text-[#636e72] hover:border-gray-300",
                   )}
                 >
                   {p}
@@ -229,7 +342,9 @@ const MaintenanceDetailPanel = ({ request, actorId, onClose, onUpdated }: Props)
 
         {/* Assign Technician */}
         <div className="pb-5 border-b border-[#f3f4f6]">
-          <p className="text-base font-semibold text-[#2d3436] mb-3">Assign Technician</p>
+          <p className="text-base font-semibold text-[#2d3436] mb-3">
+            Assign Technician
+          </p>
           <div className="relative mb-3">
             <select
               value={selectedTech}
@@ -239,12 +354,23 @@ const MaintenanceDetailPanel = ({ request, actorId, onClose, onUpdated }: Props)
               <option value="">Select technician…</option>
               {technicians.map((t) => (
                 <option key={t.technicianId} value={t.technicianId}>
-                  {t.fullName}{!t.isAvailable ? " (busy)" : ""}
+                  {t.fullName}
+                  {!t.isAvailable ? " (busy)" : ""}
                 </option>
               ))}
             </select>
-            <svg className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            <svg
+              className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M19 9l-7 7-7-7"
+              />
             </svg>
           </div>
           <button
@@ -254,7 +380,7 @@ const MaintenanceDetailPanel = ({ request, actorId, onClose, onUpdated }: Props)
               "w-full py-3 rounded-xl text-base font-medium text-white transition-all flex items-center justify-center gap-2",
               selectedTech && !isSaving
                 ? "bg-[#00a996] hover:bg-[#008c7a] cursor-pointer"
-                : "bg-[#d1d5dc] cursor-not-allowed"
+                : "bg-[#d1d5dc] cursor-not-allowed",
             )}
           >
             {isSaving && <RefreshCw className="w-4 h-4 animate-spin" />}
@@ -262,11 +388,90 @@ const MaintenanceDetailPanel = ({ request, actorId, onClose, onUpdated }: Props)
           </button>
         </div>
 
+        {/* Actions */}
+        <div className="pb-5 border-b border-[#f3f4f6]">
+          <p className="text-base font-semibold text-[#2d3436] mb-3">Actions</p>
+
+          <div className="grid grid-cols-1 gap-3">
+            <button
+              disabled={!canAccept || isSaving}
+              onClick={() => void handleAccept()}
+              className={cn(
+                "w-full py-3 rounded-xl text-base font-medium text-white transition-all flex items-center justify-center gap-2",
+                canAccept && !isSaving
+                  ? "bg-[#0ea5e9] hover:bg-[#0284c7] cursor-pointer"
+                  : "bg-[#d1d5dc] cursor-not-allowed",
+              )}
+            >
+              {isSaving && <RefreshCw className="w-4 h-4 animate-spin" />}
+              Accept / Start Work
+            </button>
+
+            <div className="bg-[#f9fafb] rounded-xl p-3">
+              <p className="text-sm font-medium text-[#2d3436] mb-2">
+                Complete
+              </p>
+              <textarea
+                value={resolution}
+                onChange={(e) => setResolution(e.target.value)}
+                placeholder="Resolution notes (optional)"
+                className="w-full min-h-[72px] resize-y border-2 border-[#e5e7eb] rounded-xl px-3 py-2 text-sm text-[#2d3436] bg-white outline-none focus:border-[#00a996]"
+              />
+              <input
+                value={totalCost}
+                onChange={(e) => setTotalCost(e.target.value)}
+                placeholder="Total cost (optional)"
+                className="mt-2 w-full border-2 border-[#e5e7eb] rounded-xl px-3 py-2 text-sm text-[#2d3436] bg-white outline-none focus:border-[#00a996]"
+              />
+              <button
+                disabled={!canComplete || isSaving}
+                onClick={() => void handleComplete()}
+                className={cn(
+                  "mt-3 w-full py-2.5 rounded-xl text-sm font-medium text-white transition-all flex items-center justify-center gap-2",
+                  canComplete && !isSaving
+                    ? "bg-[#16a34a] hover:bg-[#15803d] cursor-pointer"
+                    : "bg-[#d1d5dc] cursor-not-allowed",
+                )}
+              >
+                {isSaving && <RefreshCw className="w-4 h-4 animate-spin" />}
+                Complete Request
+              </button>
+            </div>
+
+            <div className="bg-[#fef2f2] rounded-xl p-3">
+              <p className="text-sm font-medium text-[#b91c1c] mb-2">Reject</p>
+              <textarea
+                value={rejectReason}
+                onChange={(e) => setRejectReason(e.target.value)}
+                placeholder="Rejection reason"
+                className="w-full min-h-[72px] resize-y border-2 border-[#fecaca] rounded-xl px-3 py-2 text-sm text-[#2d3436] bg-white outline-none focus:border-[#ef4444]"
+              />
+              <button
+                disabled={!canReject || isSaving}
+                onClick={() => void handleReject()}
+                className={cn(
+                  "mt-3 w-full py-2.5 rounded-xl text-sm font-medium text-white transition-all flex items-center justify-center gap-2",
+                  canReject && !isSaving
+                    ? "bg-[#ef4444] hover:bg-[#dc2626] cursor-pointer"
+                    : "bg-[#d1d5dc] cursor-not-allowed",
+                )}
+              >
+                {isSaving && <RefreshCw className="w-4 h-4 animate-spin" />}
+                Reject Request
+              </button>
+            </div>
+          </div>
+        </div>
+
         {/* Description + Photos */}
         {!cardLoading && (
           <div className="pb-5 border-b border-[#f3f4f6]">
-            <p className="text-base font-semibold text-[#2d3436] mb-2">Description</p>
-            <p className="text-sm text-[#636e72] leading-relaxed">{description}</p>
+            <p className="text-base font-semibold text-[#2d3436] mb-2">
+              Description
+            </p>
+            <p className="text-sm text-[#636e72] leading-relaxed">
+              {description}
+            </p>
 
             {photos.length > 0 && (
               <>
@@ -291,18 +496,24 @@ const MaintenanceDetailPanel = ({ request, actorId, onClose, onUpdated }: Props)
         {/* Timeline */}
         {timeline.length > 0 && (
           <div className="pb-4">
-            <p className="text-base font-semibold text-[#2d3436] mb-4">Timeline</p>
+            <p className="text-base font-semibold text-[#2d3436] mb-4">
+              Timeline
+            </p>
             <div className="flex flex-col gap-4">
               {timeline.map((item, i) => (
                 <div key={i} className="flex items-start gap-4">
                   <span className="mt-1.5 w-2 h-2 rounded-full bg-[#00a996] flex-shrink-0" />
                   <div>
-                    <p className="text-sm font-medium text-[#2d3436]">{item.title}</p>
+                    <p className="text-sm font-medium text-[#2d3436]">
+                      {item.title}
+                    </p>
                     <p className="text-xs text-[#636e72]">
                       {item.occurredAt
                         ? new Date(item.occurredAt).toLocaleString("en-US", {
-                            month: "short", day: "numeric",
-                            hour: "numeric", minute: "2-digit",
+                            month: "short",
+                            day: "numeric",
+                            hour: "numeric",
+                            minute: "2-digit",
                           })
                         : ""}
                     </p>

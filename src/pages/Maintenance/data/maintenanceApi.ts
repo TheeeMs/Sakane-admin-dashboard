@@ -16,12 +16,12 @@ export interface MaintenanceCommandCenterItem {
   id: string;
   displayId: string;
   type: "PUBLIC" | "PRIVATE";
-  priority: string;   // "LOW" | "MEDIUM" | "HIGH" – already mapped by backend
+  priority: string; // "LOW" | "MEDIUM" | "HIGH" – already mapped by backend
   issue: string;
   category: string;
   location: string;
   requestedAt: string;
-  status: string;     // "UNASSIGNED" | "ASSIGNED" | "COMPLETED" | "CLOSED"
+  status: string; // "UNASSIGNED" | "ASSIGNED" | "COMPLETED" | "CLOSED"
   workflowStatus: string;
   technicianId: string | null;
 }
@@ -104,14 +104,14 @@ export const maintenanceApi = {
   }) {
     return httpClient.get<MaintenanceListResponseDto>(
       "/v1/admin/maintenance/requests",
-      { params }
+      { params },
     );
   },
 
   /** Get detailed card for a single request */
   getCard(requestId: string) {
     return httpClient.get<MaintenanceCardDto>(
-      `/v1/admin/maintenance/requests/${requestId}/card`
+      `/v1/admin/maintenance/requests/${requestId}/card`,
     );
   },
 
@@ -119,7 +119,7 @@ export const maintenanceApi = {
   markViewed(requestId: string, actorId: string) {
     return httpClient.post(
       `/v1/admin/maintenance/requests/${requestId}/viewed`,
-      { actorId }
+      { actorId },
     );
   },
 
@@ -127,26 +127,54 @@ export const maintenanceApi = {
   listTechnicians(availableOnly = false) {
     return httpClient.get<TechnicianOptionDto[]>(
       "/v1/admin/maintenance/technicians",
-      { params: { availableOnly } }
+      { params: { availableOnly } },
     );
   },
 
   /** Update priority of a request */
-  setPriority(requestId: string, priority: MaintenancePriority, actorId: string) {
+  setPriority(
+    requestId: string,
+    priority: MaintenancePriority,
+    actorId: string,
+  ) {
     return httpClient.patch(
       `/v1/admin/maintenance/requests/${requestId}/priority`,
-      { priority, actorId }
+      { priority, actorId },
     );
   },
 
   /** Assign a technician to a request */
   assignTechnician(
     requestId: string,
-    payload: { technicianId: string; actorId: string; assignmentNote?: string }
+    payload: { technicianId: string; actorId: string; assignmentNote?: string },
   ) {
     return httpClient.post(
       `/v1/admin/maintenance/requests/${requestId}/assign`,
-      payload
+      payload,
+    );
+  },
+
+  /** Start work on a request (admin uses resident endpoint) */
+  startWork(requestId: string) {
+    return httpClient.post(`/v1/maintenance-requests/${requestId}/start`);
+  },
+
+  /** Resolve a request (admin uses resident endpoint) */
+  resolveRequest(
+    requestId: string,
+    payload?: { resolution?: string; totalCost?: number | null },
+  ) {
+    return httpClient.post(
+      `/v1/maintenance-requests/${requestId}/resolve`,
+      payload ?? {},
+    );
+  },
+
+  /** Reject a request (admin uses resident endpoint) */
+  rejectRequest(requestId: string, payload: { reason: string }) {
+    return httpClient.post(
+      `/v1/maintenance-requests/${requestId}/reject`,
+      payload,
     );
   },
 
