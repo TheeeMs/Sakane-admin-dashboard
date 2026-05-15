@@ -2,7 +2,19 @@ import axios, { AxiosError, type InternalAxiosRequestConfig } from "axios";
 import { tokenStorage } from "@/features/auth/domain/tokenStorage";
 import type { AuthResponse } from "@/features/auth/domain/types";
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8080";
+/**
+ * في الـ dev mode بنحط البادئة "/api" قدّام كل الـ requests.
+ * الـ Vite proxy في vite.config.ts بيمسك أي request بيبدأ بـ "/api"،
+ * بيشيل البادئة، ويوجّهه لـ http://localhost:8080.
+ * مثلاً:  /api/v1/auth/login/email  →  http://localhost:8080/v1/auth/login/email
+ * كده مفيش CORS، وكل الكود اللي بيستدعي "/v1/..." هيشتغل عبر الـ proxy تلقائياً.
+ *
+ * في الـ production استخدم VITE_API_BASE_URL في .env.
+ */
+const API_BASE_URL = import.meta.env.DEV
+  ? "/api"
+  : (import.meta.env.VITE_API_BASE_URL as string | undefined) ??
+    "http://localhost:8080";
 
 const RETRY_FLAG = "_retry";
 
