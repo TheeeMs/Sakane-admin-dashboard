@@ -8,6 +8,10 @@ import { TAB_CONFIG } from "./SettingsTabs";
 import SettingsTabs from "./SettingsTabs";
 import GeneralTab from "./GeneralTab";
 import SecurityTab from "./SecurityTab";
+import PaymentTab from "./components/PaymentTab";
+import NotificationTab from "./components/NotificationTab";
+import AppearanceTab from "./components/AppearanceTab";
+import SystemTab from "./components/SystemTab";
 
 // ── EmptyTabPlaceholder ───────────────────────────────────────────────────────
 
@@ -54,17 +58,15 @@ export default function SakaneSettings() {
   return (
     <div className="flex h-screen bg-gray-100 font-sans overflow-hidden">
       <div className="flex-1 flex flex-col overflow-hidden">
-
-        
-
         {/* 2. Main content */}
         <main className="flex-1 overflow-y-auto bg-white">
-
           {/* Page title + Save button */}
           <div className="px-6 pt-6 pb-2 flex items-start justify-between">
             <div>
               <h1 className="text-2xl font-bold text-gray-800">Settings</h1>
-              <p className="text-sm text-gray-400 mt-0.5">Configure system preferences and options</p>
+              <p className="text-sm text-gray-400 mt-0.5">
+                Configure system preferences and options
+              </p>
             </div>
             <button
               onClick={handleSave}
@@ -90,11 +92,18 @@ export default function SakaneSettings() {
               <GeneralTab form={form} update={update} />
             ) : activeTab === "Security" ? (
               <SecurityTab />
+            ) : activeTab === "Payment" ? (
+              <PaymentTab />
+            ) : activeTab === "Notifications" ? (
+              <NotificationTab />
+            ) : activeTab === "Appearance" ? (
+              <AppearanceTab />
+            ) : activeTab === "System" ? (
+              <SystemTab />
             ) : (
               <EmptyTabPlaceholder tab={activeTab} />
             )}
           </div>
-
         </main>
       </div>
     </div>

@@ -2,7 +2,20 @@ import axios, { AxiosError, type InternalAxiosRequestConfig } from "axios";
 import { tokenStorage } from "@/features/auth/domain/tokenStorage";
 import type { AuthResponse } from "@/features/auth/domain/types";
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8080";
+/**
+ * In dev mode we prefix every request with "/api" and let the Vite proxy
+ * (configured in vite.config.ts) rewrite it to http://localhost:8080.
+ * This avoids browser CORS preflights against the backend during local
+ * development.
+ *
+ *   /api/v1/auth/login/email  ->  http://localhost:8080/v1/auth/login/email
+ *
+ * In production the value of VITE_API_BASE_URL is used directly.
+ */
+const API_BASE_URL = import.meta.env.DEV
+  ? "/api"
+  : ((import.meta.env.VITE_API_BASE_URL as string | undefined) ??
+    "http://localhost:8080");
 
 const RETRY_FLAG = "_retry";
 
