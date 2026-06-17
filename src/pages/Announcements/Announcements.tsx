@@ -11,24 +11,62 @@ import {
   type CommunicationTabCounter,
 } from "./data/communicationsApi";
 
+function BellIcon() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+      <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+    </svg>
+  );
+}
+function FileTextIcon() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+      <polyline points="14 2 14 8 20 8"/>
+      <line x1="16" y1="13" x2="8" y2="13"/>
+      <line x1="16" y1="17" x2="8" y2="17"/>
+      <polyline points="10 9 9 9 8 9"/>
+    </svg>
+  );
+}
+function ZapIcon() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+    </svg>
+  );
+}
+function PlusIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+      <line x1="12" y1="5" x2="12" y2="19"/>
+      <line x1="5" y1="12" x2="19" y2="12"/>
+    </svg>
+  );
+}
+
 const tabs = [
   {
     key: "push" as Tab,
     apiKey: "PUSH_NOTIFICATIONS",
     label: "Push Notifications",
-    icon: "📣",
+    Icon: BellIcon,
+    badgeColor: "#0d9488",
   },
   {
     key: "news" as Tab,
     apiKey: "NEWS_ANNOUNCEMENTS",
     label: "News & Announcements",
-    icon: "📄",
+    Icon: FileTextIcon,
+    badgeColor: "#10b981",
   },
   {
     key: "system" as Tab,
     apiKey: "SYSTEM_NOTIFICATIONS",
     label: "System Notifications",
-    icon: "⚡",
+    Icon: ZapIcon,
+    badgeColor: "#7c3aed",
   },
 ];
 
@@ -237,33 +275,35 @@ export default function Announcements() {
   return (
     <div
       style={{
-        fontFamily: "'DM Sans','Segoe UI',sans-serif",
+        fontFamily: "'Inter','DM Sans','Segoe UI',sans-serif",
         minHeight: "100vh",
-        background: "#f9fafb",
+        background: "#f4f5f7",
         padding: "32px",
         boxSizing: "border-box",
       }}
     >
+      {/* Page Header */}
       <div
         style={{
           display: "flex",
           justifyContent: "space-between",
-          alignItems: "flex-start",
-          marginBottom: 28,
+          alignItems: "center",
+          marginBottom: 24,
         }}
       >
         <div>
           <h1
             style={{
               margin: 0,
-              fontSize: 26,
-              fontWeight: 800,
+              fontSize: 22,
+              fontWeight: 700,
               color: "#111827",
+              letterSpacing: "-0.3px",
             }}
           >
             Communications Center
           </h1>
-          <p style={{ margin: "6px 0 0", color: "#6b7280", fontSize: 14 }}>
+          <p style={{ margin: "4px 0 0", color: "#6b7280", fontSize: 13.5 }}>
             Manage all resident communications and notifications
           </p>
         </div>
@@ -275,41 +315,48 @@ export default function Announcements() {
                 : setShowModal(true)
             }
             style={{
-              background: "linear-gradient(135deg,#0d9488,#14b8a6)",
+              background: "#0d9488",
               color: "#fff",
               border: "none",
-              borderRadius: 10,
-              padding: "11px 20px",
-              fontWeight: 700,
-              fontSize: 14,
+              borderRadius: 8,
+              padding: "10px 18px",
+              fontWeight: 600,
+              fontSize: 13.5,
               cursor: "pointer",
-              boxShadow: "0 4px 14px rgba(13,148,136,0.35)",
+              display: "flex",
+              alignItems: "center",
+              gap: 6,
+              boxShadow: "0 2px 8px rgba(13,148,136,0.30)",
             }}
           >
-            {newBtnLabel}
+            <PlusIcon />
+            {newBtnLabel.replace("+ ", "")}
           </button>
         )}
       </div>
+
+      {/* Main Card */}
       <div
         style={{
           background: "#fff",
-          borderRadius: 16,
+          borderRadius: 12,
           border: "1px solid #e5e7eb",
           overflow: "hidden",
-          boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
+          boxShadow: "0 1px 3px rgba(0,0,0,0.07)",
         }}
       >
+        {/* Tabs Bar */}
         <div
           style={{
             display: "flex",
             borderBottom: "1px solid #e5e7eb",
-            padding: "0 20px",
-            gap: 4,
+            padding: "0 24px",
           }}
         >
           {tabs.map((t) => {
             const active = activeTab === t.key;
             const badgeText = tabBadges[t.apiKey] ?? "0";
+            const Icon = t.Icon;
             return (
               <button
                 key={t.key}
@@ -318,28 +365,33 @@ export default function Announcements() {
                   background: "none",
                   border: "none",
                   borderBottom: active
-                    ? "2.5px solid #0d9488"
-                    : "2.5px solid transparent",
-                  padding: "16px 14px 13px",
+                    ? "2px solid #0d9488"
+                    : "2px solid transparent",
+                  padding: "14px 16px 12px",
                   cursor: "pointer",
-                  fontWeight: active ? 700 : 500,
+                  fontWeight: active ? 600 : 500,
                   fontSize: 13.5,
                   color: active ? "#0d9488" : "#6b7280",
                   display: "flex",
                   alignItems: "center",
                   gap: 7,
                   whiteSpace: "nowrap",
+                  transition: "color 0.15s",
                 }}
               >
-                {t.icon} {t.label}
+                <Icon />
+                {t.label}
                 <span
                   style={{
-                    background: active ? "#0d9488" : "#e5e7eb",
+                    background: active ? t.badgeColor : "#f3f4f6",
                     color: active ? "#fff" : "#6b7280",
                     borderRadius: 999,
                     fontSize: 11,
                     fontWeight: 700,
-                    padding: "1px 7px",
+                    padding: "2px 7px",
+                    minWidth: 20,
+                    textAlign: "center" as const,
+                    lineHeight: "16px",
                   }}
                 >
                   {t.key === "news" ? newsCount : badgeText}
@@ -348,7 +400,9 @@ export default function Announcements() {
             );
           })}
         </div>
-        <div style={{ padding: 20 }}>
+
+        {/* Tab Content */}
+        <div style={{ padding: "20px 24px" }}>
           {activeTab === "push" && (
             <PushNotifications
               items={pushItems}
@@ -397,6 +451,8 @@ export default function Announcements() {
           )}
         </div>
       </div>
+
+      {/* Modals */}
       {showModal && (
         <Modal
           tab={activeTab}
